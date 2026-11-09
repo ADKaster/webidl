@@ -3,10 +3,12 @@ Group: WHATWG
 H1: Web IDL
 Shortname: webidl
 Text Macro: TWITTER webidl
-Text Macro: LATESTRD 2024-09
+Text Macro: LATESTRD 2026-09
 Abstract: This standard defines an interface definition language, Web IDL, that can be used to describe interfaces that
 Abstract: are intended to be implemented in web browsers.
 Translation: ja https://triple-underscore.github.io/WebIDL-ja.html
+Translation: zh-Hans https://htmlspecs.com/webidl/
+Translation: ko https://ko.htmlspecs.com/webidl/
 Complain About: accidental-2119 no
 </pre>
 
@@ -34,9 +36,9 @@ urlPrefix: https://tc39.es/ecma262/; spec: ecmascript
     type: argument
         text: NewTarget; url: sec-built-in-function-objects
     type: abstract-op
+        text: CreateAsyncFromSyncIterator; url: sec-createasyncfromsynciterator
         text: Completion; url: sec-completion-record-specification-type
         text: IsInteger; url: sec-isinteger
-        text: Type; url: sec-ecmascript-data-types-and-values
         text: abs; url: eqn-abs
         text: floor; url: eqn-floor
         text: max; url: eqn-max
@@ -68,10 +70,27 @@ urlPrefix: https://tc39.es/ecma262/; spec: ecmascript
             text: internal slot
         text: own property; url: sec-own-property
         text: PromiseCapability; url: sec-promisecapability-records
+        text: Iterator Record; url: sec-iterator-records
         text: element size; url: table-the-typedarray-constructors
-urlPrefix: https://tc39.es/proposal-resizablearraybuffer/; spec: RESIZABLE-BUFFERS-PROPOSAL
-    type: abstract-op
-        text: IsResizableArrayBuffer; url: sec-isresizablearraybuffer
+        text: string object; url: sec-string-objects
+        url: sec-ecmascript-language-types-bigint-type
+            text: is a BigInt
+            text: is not a BigInt
+        url: sec-ecmascript-language-types-boolean-type
+            text: is a Boolean
+            text: is not a Boolean
+        url: sec-ecmascript-language-types-number-type
+            text: is a Number
+            text: is not a Number
+        url: sec-ecmascript-language-types-string-type
+            text: is a String
+            text: is not a String
+        url: sec-ecmascript-language-types-symbol-type
+            text: is a Symbol
+            text: is not a Symbol
+        url: sec-object-type
+            text: is an Object
+            text: is not an Object
 </pre>
 
 <pre class=biblio>
@@ -448,7 +467,6 @@ underscore.
 
 <pre class="grammar" id="prod-ArgumentNameKeyword">
     ArgumentNameKeyword :
-        "async"
         "attribute"
         "callback"
         "const"
@@ -1671,6 +1689,7 @@ The type of the attribute, after resolving typedefs, must not be a
 [=nullable type|nullable=] or non-nullable version of any of the following types:
 
 *   a [=sequence type=]
+*   an [=async sequence type=]
 *   a [=dictionary type=]
 *   a [=record type=]
 *   a [=union type=]
@@ -1785,7 +1804,6 @@ are applicable only to regular attributes:
 
 <pre class="grammar" id="prod-AttributeNameKeyword">
     AttributeNameKeyword :
-        "async"
         "required"
 </pre>
 
@@ -2311,6 +2329,7 @@ The <dfn id="dfn-json-types" export lt="JSON type">JSON types</dfn> are:
 *   [=numeric types=],
 *   {{boolean}},
 *   [=string types=],
+*   [=enumeration types=],
 *   [=nullable types=] whose [=nullable types/inner type=] is a [=JSON type=],
 *   [=annotated types=] whose [=annotated types/inner type=] is a [=JSON type=],
 *   [=union types=] whose [=member types=] are [=JSON types=],
@@ -3210,10 +3229,10 @@ the same operation or constructor.
                 and "required" otherwise.
         1.  [=set/Append=] the [=tuple=] (|X|, |types|, |optionalityValues|) to |S|.
         1.  If |X| is declared to be [=variadic=], then:
-            1.  [=list/For each=] |i| in [=the range=] |n| to |max| − 1, inclusive:
+            1.  [=list/For each=] |i| in [=the exclusive range|the range=] |n| to |max|, exclusive:
                 1.  Let |t| be a [=type list=].
                 1.  Let |o| be an [=optionality list=].
-                1.  [=list/For each=] |j| in [=the range=] 0 to |n| − 1, inclusive:
+                1.  [=list/For each=] |j| in [=the exclusive range|the range=] 0 to |n|, exclusive:
                     1.  [=list/Append=] |types|[|j|] to |t|.
                     1.  [=list/Append=] |optionalityValues|[|j|] to |o|.
                 1.  [=list/For each=] |j| in [=the range=] |n| to |i|, inclusive:
@@ -3227,7 +3246,7 @@ the same operation or constructor.
                 a final, variadic argument), then [=iteration/break=].
             1.  Let |t| be a [=type list=].
             1.  Let |o| be an [=optionality list=].
-            1.  [=list/For each=] |j| in [=the range=] 0 to |i| − 1, inclusive:
+            1.  [=list/For each=] |j| in [=the exclusive range|the range=] 0 to |i|, exclusive:
                 1.  [=list/Append=] |types|[|j|] to |t|.
                 1.  [=list/Append=] |optionalityValues|[|j|] to |o|.
             1.  [=set/Append=] the [=tuple=] (|X|, |t|, |o|) to |S|.
@@ -3360,6 +3379,7 @@ the following algorithm returns <i>true</i>.
                 <th><div><span>interface-like</span></div>
                 <th><div><span>callback function</span></div>
                 <th><div><span>dictionary-like</span></div>
+                <th><div><span>async sequence</span></div>
                 <th><div><span>sequence-like</span></div>
         </thead>
         <tr>
@@ -3375,10 +3395,12 @@ the following algorithm returns <i>true</i>.
             <td>●
             <td>
             <td>●
+            <td>●
         <tr>
             <th>boolean
             <td class="belowdiagonal">
             <td>
+            <td>●
             <td>●
             <td>●
             <td>●
@@ -3401,12 +3423,14 @@ the following algorithm returns <i>true</i>.
             <td>●
             <td>●
             <td>●
+            <td>●
         <tr>
             <th>bigint
             <td class="belowdiagonal">
             <td class="belowdiagonal">
             <td class="belowdiagonal">
             <td>
+            <td>●
             <td>●
             <td>●
             <td>●
@@ -3426,6 +3450,7 @@ the following algorithm returns <i>true</i>.
             <td>●
             <td>●
             <td>●
+            <td>(d)
             <td>●
         <tr>
             <th>object
@@ -3436,6 +3461,7 @@ the following algorithm returns <i>true</i>.
             <td class="belowdiagonal">
             <td>
             <td>●
+            <td>
             <td>
             <td>
             <td>
@@ -3453,6 +3479,7 @@ the following algorithm returns <i>true</i>.
             <td>●
             <td>●
             <td>●
+            <td>●
         <tr>
             <th>interface-like
             <td class="belowdiagonal">
@@ -3463,6 +3490,7 @@ the following algorithm returns <i>true</i>.
             <td class="belowdiagonal">
             <td class="belowdiagonal">
             <td>(a)
+            <td>●
             <td>●
             <td>●
             <td>●
@@ -3479,6 +3507,7 @@ the following algorithm returns <i>true</i>.
             <td>
             <td>(c)
             <td>●
+            <td>●
         <tr>
             <th>dictionary-like
             <td class="belowdiagonal">
@@ -3492,8 +3521,24 @@ the following algorithm returns <i>true</i>.
             <td class="belowdiagonal">
             <td>
             <td>●
+            <td>●
+        <tr>
+            <th>async sequence
+            <td class="belowdiagonal">
+            <td class="belowdiagonal">
+            <td class="belowdiagonal">
+            <td class="belowdiagonal">
+            <td class="belowdiagonal">
+            <td class="belowdiagonal">
+            <td class="belowdiagonal">
+            <td class="belowdiagonal">
+            <td class="belowdiagonal">
+            <td class="belowdiagonal">
+            <td>
+            <td>
         <tr>
             <th>sequence-like
+            <td class="belowdiagonal">
             <td class="belowdiagonal">
             <td class="belowdiagonal">
             <td class="belowdiagonal">
@@ -3525,6 +3570,10 @@ the following algorithm returns <i>true</i>.
               then it is converted to a [=callback function=]. Otherwise, it is
               converted to a dictionary-like type.
             </div>
+        1.  The types are distinguishable, but when converting from an ECMAScript value,
+            a [=string object=] is never converted to an [=async sequence type=]
+            (even if it has a {{%Symbol.iterator%}} method), if a [=string type=]
+            is also in the overload set or union.
     </ol>
 
     <div class="example" id="example-distinguishability-diff-types">
@@ -4069,19 +4118,19 @@ The following extended attributes are applicable to [=iterable declarations=]:
 </pre>
 
 
-<h4 id="idl-async-iterable">Asynchronously iterable declarations</h4>
+<h4 oldids="idl-async-iterable" id="idl-async-iterable-declaration">Asynchronously iterable declarations</h4>
 
 An [=interface=] can be declared to be asynchronously iterable by using an
-<dfn id="dfn-async-iterable-declaration" export>asynchronously iterable declaration</dfn>
+<dfn id="dfn-async-iterable-declaration" lt="asynchronously iterable declaration|async_iterable" export>asynchronously iterable declaration</dfn>
 (matching <emu-nt><a href="#prod-AsyncIterable">AsyncIterable</a></emu-nt>) in the body of the
 [=interface=].
 
 <pre highlight="webidl" class="syntax">
     interface interface_identifier {
-      async iterable&lt;value_type&gt;;
-      async iterable&lt;value_type&gt;(/* arguments... */);
-      async iterable&lt;key_type, value_type&gt;;
-      async iterable&lt;key_type, value_type&gt;(/* arguments... */);
+      async_iterable&lt;value_type&gt;;
+      async_iterable&lt;value_type&gt;(/* arguments... */);
+      async_iterable&lt;key_type, value_type&gt;;
+      async_iterable&lt;key_type, value_type&gt;(/* arguments... */);
     };
 </pre>
 
@@ -4160,7 +4209,7 @@ or [=regular operations=] with these names.
         interface SessionManager {
           Session getSessionForUser(DOMString username);
 
-          async iterable&lt;DOMString, Session&gt;;
+          async_iterable&lt;DOMString, Session&gt;;
         };
 
         [Exposed=Window]
@@ -4254,7 +4303,7 @@ When they are, the effect will be as you would expect.
 
 <pre class="grammar" id="prod-AsyncIterable">
     AsyncIterable :
-        "async" "iterable" "&lt;" TypeWithExtendedAttributes OptionalType "&gt;" OptionalArgumentList ";"
+        "async_iterable" "&lt;" TypeWithExtendedAttributes OptionalType "&gt;" OptionalArgumentList ";"
 </pre>
 
 <pre class="grammar" id="prod-OptionalArgumentList">
@@ -4758,6 +4807,9 @@ dictionary definition (including any partial dictionary definitions) are
 ordered lexicographically by the Unicode codepoints that comprise their
 identifiers.
 
+The [=map/entries=] of a dictionary value are always in the order of their corresponding
+[=dictionary members=], regardless of the order in which they were [=map/set=].
+
 <div class="note">
 
     For example, with the following definitions:
@@ -4820,6 +4872,12 @@ identifiers.
     the value for c will be 1 and the value for d will be 2.
 
 </div>
+
+<p class="note">
+    As a result, two dictionary values whose [=map/entries=] have the same [=map/keys=] and
+    [=/equal=] [=map/values=] are [=/equal=], regardless of the order in which those entries were
+    [=map/set=].
+</p>
 
 The identifier of a dictionary member must not be
 the same as that of another dictionary member defined on the dictionary or
@@ -4935,11 +4993,12 @@ following types:
 *   <dfn exception>TypeError</dfn>
 *   <dfn exception>URIError</dfn>
 
-These correspond to all of the JavaScript [=ECMAScript/error objects=] (apart from
-<l spec=ecmascript>{{SyntaxError}}</l> and <l spec=ecmascript>{{Error}}</l>, which are deliberately
-omitted as they are reserved for use by the JavaScript parser and by authors, respectively). The
-meaning of each [=simple exception=] matches its corresponding error object in the JavaScript
-specification.
+These correspond to all of the JavaScript [=ECMAScript/error objects=] except for
+<l spec=ecmascript>{{AggregateError}}</l> and <l spec=ecmascript>{{SuppressedError}}</l>,
+which are designed only to wrap other errors; <l spec=ecmascript>{{SyntaxError}}</l>, which is
+reserved for use by the JavaScript parser; and <l spec=ecmascript>{{Error}}</l>, which is reserved
+for use by authors. The meaning of each [=simple exception=] matches its corresponding error object
+in the JavaScript specification.
 
 The second kind of exception is a {{DOMException}}, which provides further
 programmatically-introspectable detail on the error that occurred by giving a [=DOMException/name=].
@@ -5048,7 +5107,7 @@ over just using {{SyntaxError!!exception}} to refer to the {{DOMException}}. [[D
     <tbody>
         <tr class="deprecated">
             <td>"<dfn id="indexsizeerror" exception export><code>IndexSizeError</code></dfn>"</td>
-            <td><strong>Deprecated.</strong> Use {{RangeError}} instead.</td></td>
+            <td><strong>Deprecated.</strong> Use {{RangeError}} instead.</td>
             <td><dfn id="dom-domexception-index_size_err" for="DOMException" const export><code>INDEX_SIZE_ERR</code></dfn>&nbsp;(1)</td>
         </tr>
         <tr>
@@ -5058,7 +5117,7 @@ over just using {{SyntaxError!!exception}} to refer to the {{DOMException}}. [[D
         </tr>
         <tr>
             <td>"<dfn id="wrongdocumenterror" exception export><code>WrongDocumentError</code></dfn>"</td>
-            <td>The object is in the wrong [=document=]. [[DOM]]</td>
+            <td>The object is in the wrong [=/document=]. [[DOM]]</td>
             <td><dfn id="dom-domexception-wrong_document_err" for="DOMException" const export><code>WRONG_DOCUMENT_ERR</code></dfn>&nbsp;(4)</td>
         </tr>
         <tr>
@@ -5141,9 +5200,9 @@ over just using {{SyntaxError!!exception}} to refer to the {{DOMException}}. [[D
             <td><strong>Deprecated.</strong></td>
             <td><dfn id="dom-domexception-url_mismatch_err" for="DOMException" const export><code>URL_MISMATCH_ERR</code></dfn>&nbsp;(21)</td>
         </tr>
-        <tr>
-            <td>"<dfn id="quotaexceedederror" exception export><code>QuotaExceededError</code></dfn>"</td>
-            <td>The quota has been exceeded.</td>
+        <tr class="deprecated">
+            <td>"<code>QuotaExceededError</code>"</td>
+            <td><strong>Deprecated.</strong> Use the {{QuotaExceededError}} {{DOMException}}-derived interface instead.</td>
             <td><dfn id="dom-domexception-quota_exceeded_err" for="DOMException" const export><code>QUOTA_EXCEEDED_ERR</code></dfn>&nbsp;(22)</td>
         </tr>
         <tr>
@@ -5243,69 +5302,118 @@ certain rules, in order to have a predictable shape for developers. Specifically
 <p class=note>These requirements mean that the inherited {{DOMException/code}} property of these
 interfaces will always return 0.
 
-<div class=example id=example-domexception-derived-interface>
-    The definition for a {{DOMException}} derived interface which carries along an additional
-    "protocol error code", which is derived from what the server sent over some some hypothetical
-    network protocol "protocol X", could look something like this:
-
-    <pre highlight=webidl>
-        [Exposed=Window, Serializable]
-        interface ProtocolXError : DOMException {
-          constructor(optional DOMString message = "", ProtocolXErrorOptions options);
-
-          readonly attribute unsigned long long errorCode;
-        };
-
-        dictionary ProtocolXErrorOptions {
-            required [EnforceRange] unsigned long long errorCode;
-        };
-    </pre>
-
-    Every <code>ProtocolXError</code> instance has an <dfn for="ProtocolXError">error code</dfn>,
-    a number.
-
-    <div algorithm="ProtocolXError constructor">
-        The <b><code>new ProtocolXError(|message|, |options|)</code></b> constructor steps are:
-
-        1.  Set [=this=]'s [=DOMException/name=] to "<code>ProtocolXError</code>".
-        1.  Set [=this=]'s [=DOMException/message=] to |message|.
-        1.  Set [=this=]'s [=ProtocolXError/error code=] to |options|["<code>errorCode</code>"].
-    </div>
-
-    <div algorithm="ProtocolXError errorCode">
-        The <b><code>errorCode</code></b> getter steps are to return [=this=]'s
-        [=ProtocolXError/error code=].
-    </div>
-
-    <code>ProtocolXError</code> objects are [=serializable objects=].
-
-    <div algorithm="ProtocolXError serialization steps">
-        Their [=serialization steps=], given |value| and |serialized|, are:
-
-        1. Run the {{DOMException}} [=serialization steps=] given |value| and |serialized|.
-        1. Set |serialized|.\[[ErrorCode]] to |value|'s [=ProtocolXError/error code=].
-    </div>
-
-    <div algorithm="ProtocolXError deserialization steps">
-        Their [=deserialization steps=], given |serialized| and |value|, are:
-
-        1. Run the {{DOMException}} [=deserialization steps=] given |serialized| and |value|.
-        1. Set |value|'s [=ProtocolXError/error code=] to |serialized|.\[[ErrorCode]].
-    </div>
-</div>
-
 To [=exception/create=] or [=exception/throw=] a {{DOMException}} derived interface, supply its
 [=interface=] [=identifier=] as well as the additional information needed to construct it.
 
 <div class=example id=example-domexception-derived-throwing>
-    <p>To throw an instance of the <code>ProtocolXError</code> exemplified
-    <a href=#example-domexception-derived-interface>above</a>:
+    <p>To throw an instance of {{QuotaExceededError}}:
 
     <blockquote>
-        <p>[=exception/Throw=] a <code>ProtocolXError</code> whose [=ProtocolXError/error code=]
-        is 42.
+        <p>[=exception/Throw=] a {{QuotaExceededError}} whose [=QuotaExceededError/quota=] is 42 and
+        [=QuotaExceededError/requested=] is 50.
     </blockquote>
 </div>
+
+<h4 id="idl-DOMException-derived-predefineds" oldids="example-domexception-derived-interface">Predefined {{DOMException}} derived interfaces</h4>
+
+This standard so far defines one predefined {{DOMException}} derived interface:
+
+<pre class=idl>
+[Exposed=*, Serializable]
+interface QuotaExceededError : DOMException {
+  constructor(optional DOMString message = "", optional QuotaExceededErrorOptions options = {});
+
+  readonly attribute double? quota;
+  readonly attribute double? requested;
+};
+
+dictionary QuotaExceededErrorOptions {
+  double quota;
+  double requested;
+};
+</pre>
+
+The {{QuotaExceededError}} exception can be thrown when a quota is exceeded. It has two properties
+that are optionally present, to give more information to the web developer about their request
+compared to the quota value.
+
+<p class="note">Previous versions of this standard defined "<code>QuotaExceededError</code>" as one
+of the <a href="#idl-DOMException-error-names">base <code>DOMException</code> error names</a>. It
+has been upgraded to a full interface to support including such information.</p>
+
+Every {{QuotaExceededError}} instance has a <dfn export for="QuotaExceededError">requested</dfn> and
+a <dfn export for="QuotaExceededError">quota</dfn>, both numbers or null. They are both initially
+null.
+
+<div algorithm>
+    The <dfn constructor for="QuotaExceededError" lt="QuotaExceededError(message, options)">new QuotaExceededError(|message|, |options|)</dfn>
+    constructor steps are:
+
+    1.  Set [=this=]'s [=DOMException/name=] to "<code>QuotaExceededError</code>".
+
+    1.  Set [=this=]'s [=DOMException/message=] to |message|.
+
+    1.  If |options|["{{QuotaExceededErrorOptions/quota}}"] is present:
+
+        1.  If |options|["{{QuotaExceededErrorOptions/quota}}"] is less than 0, then throw a
+            {{RangeError}}.
+
+        1.  Set [=this=]'s [=QuotaExceededError/quota=] to
+            |options|["{{QuotaExceededErrorOptions/quota}}"].
+
+    1.  If |options|["{{QuotaExceededErrorOptions/requested}}"] is present:
+
+        1.  If |options|["{{QuotaExceededErrorOptions/requested}}"] is less than 0, then throw a
+            {{RangeError}}.
+
+        1.  Set [=this=]'s [=QuotaExceededError/requested=] to
+            |options|["{{QuotaExceededErrorOptions/requested}}"].
+
+    1.  If [=this=]'s [=QuotaExceededError/quota=] is not null, [=this=]'s [=QuotaExceededError/requested=] is not null,
+        and [=this=]'s [=QuotaExceededError/requested=] is less than [=this=]'s [=QuotaExceededError/quota=], then
+        throw a {{RangeError}}.
+</div>
+
+The <dfn attribute for="QuotaExceededError">quota</dfn> getter steps are to return [=this=]'s
+[=QuotaExceededError/quota=].
+
+The <dfn attribute for="QuotaExceededError">requested</dfn> getter steps are to return [=this=]'s
+[=QuotaExceededError/requested=].
+
+<p class="note">The {{QuotaExceededError}} interface inherits the {{DOMException}} interface's {{DOMException/code}}
+getter, which will always return 22. However, relying on this value is discouraged (for both {{QuotaExceededError}} and
+{{DOMException}}); it is better to use the {{DOMException/name}} getter.
+
+<hr>
+
+{{QuotaExceededError}} objects are [=serializable objects=].
+
+<div algorithm="QuotaExceededError serialization steps">
+    Their [=serialization steps=], given |value| and |serialized|, are:
+
+    1. Run the {{DOMException}} [=serialization steps=] given |value| and |serialized|.
+
+    1. Set |serialized|.\[[Quota]] to |value|'s [=QuotaExceededError/quota=].
+
+    1. Set |serialized|.\[[Requested]] to |value|'s [=QuotaExceededError/requested=].
+</div>
+
+<div algorithm="QuotaExceededError deserialization steps">
+    Their [=deserialization steps=], given |serialized| and |value|, are:
+
+    1. Run the {{DOMException}} [=deserialization steps=] given |serialized| and |value|.
+
+    1. Set |value|'s [=QuotaExceededError/quota=] to |serialized|.\[[Quota]].
+
+    1. Set |value|'s [=QuotaExceededError/requested=] to |serialized|.\[[Requested]].
+</div>
+
+<hr>
+
+Specifications that [=exception/create=] or [=exception/throw=] a {{QuotaExceededError}} must not
+provide a [=QuotaExceededError/requested=] and [=QuotaExceededError/quota=] that are both non-null
+and where [=QuotaExceededError/requested=] is less than [=QuotaExceededError/quota=].
+
 
 <h3 id="idl-enums">Enumerations</h3>
 
@@ -5676,6 +5784,7 @@ are known as <dfn id="dfn-object-type" export>object types</dfn>.
         StringType Null
         identifier Null
         "sequence" "&lt;" TypeWithExtendedAttributes "&gt;" Null
+        "async_sequence" "&lt;" TypeWithExtendedAttributes "&gt;" Null
         "object" Null
         "symbol" Null
         BufferRelatedType Null
@@ -5788,8 +5897,7 @@ and more limited in how it was allowed to be used.
 
 <h4 oldids="dom-boolean" id="idl-boolean" interface>boolean</h4>
 
-The {{boolean}} type has two values:
-<code class="idl">true</code> and <code class="idl">false</code>.
+The {{boolean}} type corresponds to [=/booleans=].
 
 {{boolean}} constant values in IDL are
 represented with the <emu-t>true</emu-t> and
@@ -5797,8 +5905,7 @@ represented with the <emu-t>true</emu-t> and
 
 <h4 oldids="dom-byte" id="idl-byte" interface>byte</h4>
 
-The {{byte}} type is a signed integer
-type that has values in the range [−128, 127].
+The {{byte}} type corresponds to [=/8-bit signed integers=].
 
 {{byte}} constant values in IDL are
 represented with <emu-t class="regex"><a href="#prod-integer">integer</a></emu-t>
@@ -5806,8 +5913,7 @@ tokens.
 
 <h4 oldids="dom-octet" id="idl-octet" interface>octet</h4>
 
-The {{octet}} type is an unsigned integer
-type that has values in the range [0, 255].
+The {{octet}} type corresponds to [=/8-bit unsigned integers=].
 
 {{octet}} constant values in IDL are
 represented with <emu-t class="regex"><a href="#prod-integer">integer</a></emu-t>
@@ -5815,8 +5921,7 @@ tokens.
 
 <h4 oldids="dom-short" id="idl-short" interface>short</h4>
 
-The {{short}} type is a signed integer
-type that has values in the range [−32768, 32767].
+The {{short}} type corresponds to [=/16-bit signed integers=].
 
 {{short}} constant values in IDL are
 represented with <emu-t class="regex"><a href="#prod-integer">integer</a></emu-t>
@@ -5824,8 +5929,7 @@ tokens.
 
 <h4 oldids="dom-unsignedshort" id="idl-unsigned-short" interface>unsigned short</h4>
 
-The {{unsigned short}} type is an unsigned integer
-type that has values in the range [0, 65535].
+The {{unsigned short}} type corresponds to [=/16-bit unsigned integers=].
 
 {{unsigned short}} constant values in IDL are
 represented with <emu-t class="regex"><a href="#prod-integer">integer</a></emu-t>
@@ -5833,8 +5937,7 @@ tokens.
 
 <h4 oldids="dom-long" id="idl-long" interface>long</h4>
 
-The {{long}} type is a signed integer
-type that has values in the range [−2147483648, 2147483647].
+The {{long}} type corresponds to [=/32-bit signed integers=].
 
 {{long}} constant values in IDL are
 represented with <emu-t class="regex"><a href="#prod-integer">integer</a></emu-t>
@@ -5842,8 +5945,7 @@ tokens.
 
 <h4 oldids="dom-unsignedlong" id="idl-unsigned-long" interface>unsigned long</h4>
 
-The {{unsigned long}} type is an unsigned integer
-type that has values in the range [0, 4294967295].
+The {{unsigned long}} type corresponds to [=/32-bit unsigned integers=].
 
 {{unsigned long}} constant values in IDL are
 represented with <emu-t class="regex"><a href="#prod-integer">integer</a></emu-t>
@@ -5851,8 +5953,7 @@ tokens.
 
 <h4 oldids="dom-longlong" id="idl-long-long" interface>long long</h4>
 
-The {{long long}} type is a signed integer
-type that has values in the range [−9223372036854775808, 9223372036854775807].
+The {{long long}} type corresponds to [=/64-bit signed integers=].
 
 {{long long}} constant values in IDL are
 represented with <emu-t class="regex"><a href="#prod-integer">integer</a></emu-t>
@@ -5860,8 +5961,7 @@ tokens.
 
 <h4 oldids="dom-unsignedlonglong" id="idl-unsigned-long-long" interface>unsigned long long</h4>
 
-The {{unsigned long long}} type is an unsigned integer
-type that has values in the range [0, 18446744073709551615].
+The {{unsigned long long}} type corresponds to [=/64-bit unsigned integers=].
 
 {{unsigned long long}} constant values in IDL are
 represented with <emu-t class="regex"><a href="#prod-integer">integer</a></emu-t>
@@ -5968,8 +6068,8 @@ can be set to [=value of string literal tokens|the value=] of a
 The {{USVString}} type
 corresponds to [=scalar value strings=].
 Depending on the context,
-these can be treated as sequences of either 16-bit unsigned integer [=code units=]
-or [=scalar values=].
+these can be treated as sequences of [=/code units=]
+or [=/scalar values=].
 
 There is no way to represent a constant {{USVString}}
 value in IDL, although {{USVString}} [=dictionary member=] [=dictionary member/default values=]
@@ -6112,6 +6212,9 @@ The [=nullable types/inner type=] must not be:
 Note: Although dictionary types can in general be nullable,
 they cannot when used as the type of an operation argument or a dictionary member.
 
+For any type or category of types |X|, a <dfn export>potentially nullable</dfn> |X| is either an
+|X| or a [=nullable type=] whose [=nullable types/inner type=] is an |X|.
+
 Nullable type constant values in IDL are represented in the same way that
 constant values of their [=nullable types/inner type=]
 would be represented, or with the <emu-t>null</emu-t> token.
@@ -6177,6 +6280,34 @@ sequence is used.
 Any [=list=] can be implicitly treated as a <code>sequence&lt;|T|&gt;</code>, as long as it contains
 only [=list/items=] that are of type |T|.
 
+<!-- Note: if we ever add synchronous iterable types, we should add a note here about why sequences and iterables are not the same. -->
+
+<h4 id="idl-async-iterable-type" lt="async_sequence|async sequence" dfn export>Async sequence types — async_sequence&lt;|T|&gt;</h4>
+
+An <dfn lt="async sequence type" export>async sequence type</dfn> is a parameterized
+type whose values are references to objects that can produce an asynchronously iterable, possibly infinite,
+sequence of values of type |T|.
+
+Unlike [=sequences=], which are fixed-length lists where all values are known in advance, the asynchronously
+iterable sequences created by async sequences are lazy. Their values may be produced asynchronously
+only during iteration, and thus the values or length might not be known at the time the async
+sequence is created.
+
+Async sequences are passed by reference in language bindings where they are represented by an object.
+This means that passing an async sequence to a [=platform object=] will result in a reference to the
+async sequence being kept by that object. Similarly, any async sequence returned from a platform
+object will be a reference to the same object and modifications made to it will be visible to the
+platform object. This is in contrast to sequences, which are always passed by value.
+
+Note: Async sequences cannot be constructed from IDL. If returned from an operation, or used as the
+type of a dictionary member, the async sequence will have originated from the host environment and
+have been turned into an IDL type via a language binding. Instead of returning an async sequence
+from an IDL operation, the operation might want to return an [=interface=] that has an
+[=asynchronously iterable declaration=].
+
+Async sequences must not be used as the type of an [=attribute=] or [=constant=].
+
+There is no way to represent an async sequence value in IDL.
 
 <h4 id="idl-record" lt="record" dfn export>Record types — record&lt;|K|, |V|&gt;</h4>
 
@@ -6199,7 +6330,7 @@ Records must not be used as the type of an [=attribute=] or
 [=constant=].
 
 Any [=ordered map=] can be implicitly treated as a <code>record&lt;|K|, |V|&gt;</code>, as long as
-it contains only [=map/entries=] whose [=map/keys=] are all of of type |K| and whose [=map/values=]
+it contains only [=map/entries=] whose [=map/keys=] are all of type |K| and whose [=map/values=]
 are all of type |V|.
 
 
@@ -6209,7 +6340,7 @@ A <dfn id="dfn-promise-type" export>promise type</dfn> is a parameterized type
 whose values are references to objects that “is used as a place holder
 for the eventual results of a deferred (and possibly asynchronous) computation
 result of an asynchronous operation”.
-See <a href="https://tc39.github.io/ecma262/#sec-promise-objects">section 25.4</a>
+See <a href="https://tc39.es/ecma262/#sec-promise-objects">Promise Objects</a>
 of the JavaScript specification for details on the semantics of promise objects.
 
 Promise types are non-nullable, but |T| may be nullable.
@@ -6372,7 +6503,7 @@ The following extended attributes are <dfn for="extended attributes">applicable 
     an IDL type |type| are determined as follows:
 
     1.  Let |extended attributes| be a new empty [=ordered set|set=].
-    1.  If |type| appears as part of a
+    1.  If |type| is the <emu-nt><a href="#prod-Type">Type</a></emu-nt> directly within a
         <emu-nt><a href="#prod-TypeWithExtendedAttributes">TypeWithExtendedAttributes</a></emu-nt>
         production, [=set/append=] each of the [=extended attributes=] present in the production's
         <emu-nt><a href="#prod-ExtendedAttributeList">ExtendedAttributeList</a></emu-nt> to
@@ -6405,11 +6536,22 @@ The following extended attributes are <dfn for="extended attributes">applicable 
                 };
             </pre>
         </div>
-    1.  If |type| appears as part of a <emu-nt><a href="#prod-Type">Type</a></emu-nt> production
-        directly within an <emu-nt><a href="#prod-Argument">Argument</a></emu-nt> production,
-        [=set/append=] to |extended attributes| all of the [=extended attributes=] present in the
-        production's
-        <emu-nt><a href="#prod-ExtendedAttributeList">ExtendedAttributeList</a></emu-nt> that are
+    1.  If |type| is the [=nullable types/inner type=] of a [=nullable type=] |N|, [=set/append=]
+        each of the [=extended attributes associated with=] |N| to |extended attributes|.
+
+        <div class="example" id="example-extended-attribute-association-nullable">
+            <pre class="idl">
+                [Exposed=Window]
+                interface I {
+                    attribute [XAttr] long? attrib;
+                };
+            </pre>
+        </div>
+    1.  If |type| is the type of an argument |A| that is not declared with the
+        <emu-t>optional</emu-t> keyword, [=set/append=] to |extended attributes| all of the
+        [=extended attributes=] present in the
+        <emu-nt><a href="#prod-ExtendedAttributeList">ExtendedAttributeList</a></emu-nt> of |A|'s
+        <emu-nt><a href="#prod-Argument">Argument</a></emu-nt> production that are
         [=applicable to types=].
 
         <div class="example" id="example-3f984a52">
@@ -6424,11 +6566,11 @@ The following extended attributes are <dfn for="extended attributes">applicable 
             [=applicable to types=]; otherwise [<code>XAttr</code>] applies to the argument, and not
             the argument's type.
         </div>
-    1.  If |type| appears as part of a <emu-nt><a href="#prod-Type">Type</a></emu-nt> production
-        directly within a <emu-nt><a href="#prod-DictionaryMember">DictionaryMember</a></emu-nt>
-        production, [=set/append=] to |extended attributes| all of the [=extended attributes=]
-        present in the production's
-        <emu-nt><a href="#prod-ExtendedAttributeList">ExtendedAttributeList</a></emu-nt> that are
+    1.  If |type| is the type of a [=dictionary member=] |M| that is not
+        [=dictionary member/required=], [=set/append=] to |extended attributes| all of the
+        [=extended attributes=] present in the
+        <emu-nt><a href="#prod-ExtendedAttributeList">ExtendedAttributeList</a></emu-nt> of |M|'s
+        <emu-nt><a href="#prod-DictionaryMember">DictionaryMember</a></emu-nt> production that are
         [=applicable to types=].
 
         <div class="example" id="example-916df766">
@@ -6495,7 +6637,7 @@ data. The table below lists these types and the kind of buffer or view they repr
         <td><dfn id="idl-BigUint64Array" interface>BigUint64Array</dfn>
     <tr>
         <td><dfn id="idl-Uint8ClampedArray" interface>Uint8ClampedArray</dfn>
-        <td>A view on to a [=buffer type=] instance that exposes it as an array of unsigned 8-bit integers with clamped conversions
+        <td>A view on to a [=buffer type=] instance that exposes it as an array of [=/8-bit unsigned integers=] with clamped conversions
     <tr>
         <td><dfn id="idl-Float16Array" interface>Float16Array</dfn>
         <td rowspan=3>A view on to a [=buffer type=] instance that exposes it as an array of IEEE 754 floating point numbers of the given size in bits; Float16Array corresponds to the ECMAScript proposal [[PROPOSAL-FLOAT16ARRAY]].
@@ -6643,7 +6785,8 @@ There is no way to represent a constant observable array value in IDL.
 
         1.  If |employee| is not allowed to enter the building today, then throw a
             "{{NotAllowedError}}" {{DOMException}}.
-        1.  If |index| is greater than 200, then throw a "{{QuotaExceededError}}" {{DOMException}}.
+        1.  If |index| is greater than or equal to 200, then throw a {{QuotaExceededError}} whose
+            [=QuotaExceededError/quota=] is 200 and [=QuotaExceededError/requested=] is |index|.
         1.  Put |employee| to work!
 
         The [=observable array attribute/delete an indexed value=] algorithm for
@@ -6731,7 +6874,7 @@ grammar symbol matches nearly any sequence of tokens, however the
 defined in this document only accept a more restricted syntax.
 Any extended attribute encountered in an
 [=IDL fragment=] is
-matched against the following five grammar symbols to determine
+matched against the following grammar symbols to determine
 which form (or forms) it is in:
 
 <table class="vert data">
@@ -6782,6 +6925,50 @@ which form (or forms) it is in:
         </td>
         <td>
             <code>[PutForwards=name]</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <emu-nt><a href="#prod-ExtendedAttributeString">ExtendedAttributeString</a></emu-nt>
+        </td>
+        <td>
+            <dfn id="dfn-xattr-string" for="extended attribute" export>takes a string</dfn>
+        </td>
+        <td>
+            <code>[Reflect="popover"]</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <emu-nt><a href="#prod-ExtendedAttributeInteger">ExtendedAttributeInteger</a></emu-nt>
+        </td>
+        <td>
+            <dfn id="dfn-xattr-integer" for="extended attribute" export>takes an integer</dfn>
+        </td>
+        <td>
+            <code>[ReflectDefault=2]</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <emu-nt><a href="#prod-ExtendedAttributeDecimal">ExtendedAttributeDecimal</a></emu-nt>
+        </td>
+        <td>
+            <dfn id="dfn-xattr-decimal" for="extended attribute" export>takes a decimal</dfn>
+        </td>
+        <td>
+            <code>[ReflectDefault=2.0]</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <emu-nt><a href="#prod-ExtendedAttributeIntegerList">ExtendedAttributeIntegerList</a></emu-nt>
+        </td>
+        <td>
+            <dfn id="dfn-xattr-integer-list" for="extended attribute" export>takes an integer list</dfn>
+        </td>
+        <td>
+            <code>[ReflectRange=(2, 600)]</code>
         </td>
     </tr>
     <tr>
@@ -6917,6 +7104,17 @@ five forms are allowed.
         ε
 </pre>
 
+<pre class="grammar" id="prod-IntegerList">
+    IntegerList :
+        integer Integers
+</pre>
+
+<pre class="grammar" id="prod-Integers">
+    Integers :
+        "," integer Integers
+        ε
+</pre>
+
 <pre class="grammar" id="prod-ExtendedAttributeNoArgs">
     ExtendedAttributeNoArgs :
         identifier
@@ -6932,6 +7130,21 @@ five forms are allowed.
         identifier "=" identifier
 </pre>
 
+<pre class="grammar" id="prod-ExtendedAttributeString">
+    ExtendedAttributeString :
+        identifier "=" string
+</pre>
+
+<pre class="grammar" id="prod-ExtendedAttributeInteger">
+    ExtendedAttributeInteger :
+        identifier "=" integer
+</pre>
+
+<pre class="grammar" id="prod-ExtendedAttributeDecimal">
+    ExtendedAttributeDecimal :
+        identifier "=" decimal
+</pre>
+
 <pre class="grammar" id="prod-ExtendedAttributeWildcard">
     ExtendedAttributeWildcard :
         identifier "=" "*"
@@ -6940,6 +7153,11 @@ five forms are allowed.
 <pre class="grammar" id="prod-ExtendedAttributeIdentList">
     ExtendedAttributeIdentList :
         identifier "=" "(" IdentifierList ")"
+</pre>
+
+<pre class="grammar" id="prod-ExtendedAttributeIntegerList">
+    ExtendedAttributeIntegerList :
+        identifier "=" "(" IntegerList ")"
 </pre>
 
 <pre class="grammar" id="prod-ExtendedAttributeNamedArgList">
@@ -7128,21 +7346,21 @@ JavaScript value type.
         return the unique {{undefined}} IDL value.
     1.  If |V| is <emu-val>null</emu-val>, then
         return the <emu-val>null</emu-val> {{object|object?}} reference.
-    1.  If <a abstract-op>Type</a>(|V|) is Boolean, then
+    1.  If |V| [=is a Boolean=], then
         return the {{boolean}} value that represents the same truth value.
-    1.  If <a abstract-op>Type</a>(|V|) is Number, then
+    1.  If |V| [=is a Number=], then
         return the result of <a href="#js-to-unrestricted-double">converting</a> |V|
         to an {{unrestricted double}}.
-    1.  If <a abstract-op>Type</a>(|V|) is BigInt, then
+    1.  If |V| [=is a BigInt=], then
         return the result of <a href="#js-to-bigint">converting</a> |V|
         to a {{bigint}}.
-    1.  If <a abstract-op>Type</a>(|V|) is String, then
+    1.  If |V| [=is a String=], then
         return the result of <a href="#js-to-DOMString">converting</a> |V|
         to a {{DOMString}}.
-    1.  If <a abstract-op>Type</a>(|V|) is Symbol, then
+    1.  If |V| [=is a Symbol=], then
         return the result of <a href="#js-symbol">converting</a> |V|
         to a {{symbol}}.
-    1.  If <a abstract-op>Type</a>(|V|) is Object, then
+    1.  If |V| [=is an Object=], then
         return an IDL {{object}} value that references |V|.
 </div>
 
@@ -7513,7 +7731,7 @@ In effect, where <var ignore>x</var> is a Number value,
 Note: Since there is only a single JavaScript <emu-val>NaN</emu-val> value,
 it must be canonicalized to a particular single precision IEEE 754 NaN value.  The NaN value
 mentioned above is chosen simply because it is the quiet NaN with the lowest
-value when its bit pattern is interpreted as an unsigned 32-bit integer.
+value when its bit pattern is interpreted as an [=/32-bit unsigned integer=].
 
 <div id="unrestricted-float-to-js" algorithm="convert an unrestricted float to a JavaScript value">
     <span id="unrestricted-float-to-es"></span>
@@ -7573,7 +7791,7 @@ value when its bit pattern is interpreted as an unsigned 32-bit integer.
 Note: Since there is only a single JavaScript <emu-val>NaN</emu-val> value,
 it must be canonicalized to a particular double precision IEEE 754 NaN value.  The NaN value
 mentioned above is chosen simply because it is the quiet NaN with the lowest
-value when its bit pattern is interpreted as an unsigned 64-bit integer.
+value when its bit pattern is interpreted as an [=/64-bit unsigned integer=].
 
 <div id="unrestricted-double-to-js" algorithm="convert an unrestricted double to a JavaScript value">
     <span id="unrestricted-double-to-es"></span>
@@ -7618,9 +7836,9 @@ value when its bit pattern is interpreted as an unsigned 64-bit integer.
     to an IDL [=numeric type=] |T| or {{bigint}} value by running the following algorithm:
 
     1.  Let |x| be [=?=] [$ToNumeric$](|V|).
-    1.  If [$Type$](|x|) is BigInt, then
+    1.  If |x| [=is a BigInt=], then
         1.  Return the IDL {{bigint}} value that represents the same numeric value as |x|.
-    1.  Assert: [$Type$](|x|) is Number.
+    1.  Assert: |x| [=is a Number=].
     1.  Return the result of [=converted to a JavaScript value|converting=] |x| to |T|.
 </div>
 
@@ -7641,7 +7859,7 @@ value when its bit pattern is interpreted as an unsigned 64-bit integer.
 </div>
 
 <p id="DOMString-to-js">
-    <span id="DOMString-to-es"></script>
+    <span id="DOMString-to-es"></span>
     The result of [=converted to a JavaScript value|converting=]
     an IDL {{DOMString}} value to a JavaScript
     value is the String
@@ -7667,7 +7885,7 @@ value when its bit pattern is interpreted as an unsigned 64-bit integer.
 </div>
 
 <p id="ByteString-to-js">
-    <span id="ByteString-to-es"></script>
+    <span id="ByteString-to-es"></span>
     The result of [=converted to a JavaScript value|converting=]
     an IDL {{ByteString}} value to a JavaScript
     value is a String
@@ -7711,7 +7929,7 @@ values are represented by JavaScript Object values.
     A JavaScript value |V| is [=converted to an IDL value|converted=]
     to an IDL {{object}} value by running the following algorithm:
 
-    1.  If <a abstract-op>Type</a>(|V|) is not Object, then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
+    1.  If |V| [=is not an Object=], then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  Return the IDL {{object}} value that is a reference to the same object as |V|.
 </div>
 
@@ -7733,7 +7951,7 @@ IDL {{symbol}} values are represented by JavaScript Symbol values.
     A JavaScript value |V| is [=converted to an IDL value|converted=] to an IDL {{symbol}} value
     by running the following algorithm:
 
-    1.  If <a abstract-op>Type</a>(|V|) is not Symbol, then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
+    1.  If |V| [=is not a Symbol=], then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  Return the IDL {{symbol}} value that is a reference to the same symbol as |V|.
 </div>
 
@@ -7781,7 +7999,7 @@ values are represented by JavaScript Object values (including [=function objects
     A JavaScript value |V| is [=converted to an IDL value|converted=]
     to an IDL [=callback interface type=] value by running the following algorithm:
 
-    1.  If <a abstract-op>Type</a>(|V|) is not Object, then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
+    1.  If |V| [=is not an Object=], then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  Return the IDL [=callback interface type=] value that represents a reference to |V|, with
         the <a spec="HTML">incumbent settings object</a> as the [=callback context=].
 </div>
@@ -7809,21 +8027,18 @@ the object (or its prototype chain) correspond to [=dictionary members=].
     to an IDL [=dictionary type=] value by
     running the following algorithm (where |D| is the [=dictionary type=]):
 
-    1.  If <a abstract-op>Type</a>(|jsDict|) is not Undefined, Null or Object, then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
+    1.  If |jsDict| [=is not an Object=] and |jsDict| is neither <emu-val>undefined</emu-val> nor
+        <emu-val>null</emu-val>, then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  Let |idlDict| be an empty [=ordered map=], representing a dictionary of type |D|.
     1.  Let |dictionaries| be a list consisting of |D| and all of |D|'s [=inherited dictionaries=],
         in order from least to most derived.
     1.  For each dictionary |dictionary| in |dictionaries|, in order:
         1.  For each dictionary member |member| declared on |dictionary|, in lexicographical order:
             1.  Let |key| be the [=identifier=] of |member|.
-            1.  Let |jsMemberValue| be a JavaScript value, depending on <a abstract-op>Type</a>(|jsDict|):
-                <dl class="switch">
-                     :  Undefined
-                     :  Null
-                     :: <emu-val>undefined</emu-val>
-                     :  anything else
-                     :: [=?=] <a abstract-op>Get</a>(|jsDict|, |key|)
-                </dl>
+            1.  If |jsDict| is either <emu-val>undefined</emu-val> or <emu-val>null</emu-val>, then:
+                1.  Let |jsMemberValue| be <emu-val>undefined</emu-val>.
+            1.  Otherwise,
+                1.  Let |jsMemberValue| be [=?=] <a abstract-op>Get</a>(|jsDict|, |key|).
             1.  If |jsMemberValue| is not <emu-val>undefined</emu-val>, then:
                 1.  Let |idlMemberValue| be the result of [=converted to an IDL value|converting=] |jsMemberValue| to an IDL value whose type is the type |member| is declared to be of.
                 1.  [=map/Set=] |idlDict|[|key|] to |idlMemberValue|.
@@ -7936,7 +8151,7 @@ the JavaScript <emu-val>null</emu-val> value.
     to an IDL [=nullable type=] <code class="idl">|T|?</code>
     value (where |T| is the [=nullable types/inner type=]) as follows:
 
-    1.  If <a abstract-op>Type</a>(|V|) is not Object, and
+    1.  If |V| [=is not an Object=], and
         the conversion to an IDL value is being performed due
         to |V| being assigned to an [=attribute=]
         whose type is a [=nullable type|nullable=]
@@ -7982,7 +8197,7 @@ JavaScript Array values.
     A JavaScript value |V| is [=converted to an IDL value|converted=]
     to an IDL <a lt="sequence type">sequence&lt;<var ignore>T</var>&gt;</a> value as follows:
 
-    1.  If <a abstract-op>Type</a>(|V|) is not Object,
+    1.  If |V| [=is not an Object=],
         [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  Let |method| be [=?=] <a abstract-op>GetMethod</a>(|V|, {{%Symbol.iterator%}}).
     1.  If |method| is <emu-val>undefined</emu-val>,
@@ -8115,6 +8330,162 @@ JavaScript Array values.
 </div>
 
 
+<h4 id="js-async-iterable">Async sequences — async_sequence&lt;|T|&gt;</h4>
+
+In the JavaScript binding, IDL [=async sequence type|async sequence=] values are represented by
+a [=struct=] with the following [=struct/items=]:
+
+* <dfn for="JS async sequence">object</dfn>, a JavaScript value
+* <dfn for="JS async sequence">method</dfn>, a JavaScript value
+* <dfn for="JS async sequence">type</dfn>, either "<code>sync</code>" or "<code>async</code>"
+
+
+<div id="js-to-async-iterable" algorithm="convert a JavaScript value to async sequence">
+    A JavaScript value |V| is [=converted to an IDL value|converted=]
+    to an IDL <a lt="async sequence">async_sequence&lt;<var ignore>T</var>&gt;</a> value as follows:
+
+    1.  If |V| [=is not an Object=], then
+        [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
+    1.  Let |method| be [=?=] <a abstract-op>GetMethod</a>(obj, {{%Symbol.asyncIterator%}}).
+    1.  If |method| is <emu-val>undefined</emu-val>:
+        1.  Set |syncMethod| to [=?=] <a abstract-op>GetMethod</a>(obj, {{%Symbol.iterator%}}).
+        1.  If |syncMethod| is undefined, [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
+        1.  Return an IDL [=async sequence=] value with [=JS async sequence/object=] set to |V|,
+            [=JS async sequence/method=] set to |syncMethod|, and [=JS async sequence/type=] set to
+            "<code>sync</code>".
+    1.  Return an IDL [=async sequence=] value with [=JS async sequence/object=] set to |V|,
+        [=JS async sequence/method=] set to |method|, and [=JS async sequence/type=] set to
+        "<code>async</code>".
+</div>
+
+<div id="async-sequence-to-js" algorithm="convert an async sequence to a JavaScript value">
+    An IDL <a lt="async sequence">async_sequence&lt;<var ignore>T</var>&gt;</a> value |V| is
+    [=converted to a JavaScript value|converted=] to a JavaScript object as follows:
+
+    1.  Return |V|'s [=JS async sequence/object=].
+</div>
+
+<h5 id="js-async-sequence-iteration">Iterating async sequences</h5>
+
+An [=async sequence=] is not directly iterated over. Instead, it is first opened to create
+an [=async iterator=]. The [=async iterator=] can be asynchronously iterated over to produce values.
+
+<dfn lt="async iterator" export>Async iterators</dfn> are [=structs=] with the following [=struct/items=]:
+* <dfn for="JS async iterator">underlying record</dfn>, an [=Iterator Record=]
+* <dfn for="JS async iterator">type parameter</dfn>, an IDL type representing the type of values produced by the async iterator
+
+<div algorithm>
+
+    To <dfn id="async-sequence-open" export lt="open an async sequence">open</dfn> an
+    <code><a lt="async sequence type">async_sequence&lt;<var>T</var>&gt;</a></code> |sequence|:
+
+    1.  Let |iterator| be [=?=] <a abstract-op>GetIteratorFromMethod</a>(|sequence|'s
+        [=JS async sequence/object=], |sequence|'s [=JS async sequence/method=]).
+    1.  If |sequence|'s [=JS async sequence/type=] is "<code>sync</code>", set |iterator| to
+        <a abstract-op>CreateAsyncFromSyncIterator</a>(|iterator|).
+    1.  Return an [=async iterator=] value with [=JS async iterator/underlying record=] set to |iterator| and
+        [=JS async iterator/type parameter=] set to |T|.
+
+</div>
+
+
+
+<div algorithm>
+
+    To <dfn id="async-iterator-get-next-value" export lt="get an async iterator next value">get the next value</dfn> of an
+    [=async iterator=] |iterator|:
+
+    1.  Let |nextResult| be
+        <a abstract-op>IteratorNext</a>(|iterator|'s [=JS async iterator/underlying record=]).
+    1.  If |nextResult| is an [=abrupt completion=], return [=a promise rejected with=]
+        |nextResult|.\[[Value]].
+    1.  Let |nextPromise| be [=a promise resolved with=] |nextResult|.\[[Value]].
+    1.  Return the result of [=reacting=] to |nextPromise| with the following fulfillment
+        steps, given |iterResult|:
+        1.  If |iterResult| [=is not an Object=], [=JavaScript/throw=] a
+            <l spec=ecmascript>{{TypeError}}</l>.
+        1.  Let |done| be [=?=] <a abstract-op>IteratorComplete</a>(|iterResult|).
+        1.  If |done| is true:
+            1.  Return [=end of iteration=].
+        1.  Otherwise:
+            1.  Let |V| be [=?=] <a abstract-op>IteratorValue</a>(|iterResult|).
+            1.  Let |value| be the result of [=converted to an IDL value|converting=] |V| to an IDL
+                value of type |iterator|'s [=JS async iterator/type parameter=].
+            1.  Return |value|.
+
+</div>
+
+<div algorithm>
+
+    To <dfn id="async-iterator-close" export lt="close an async iterator">close</dfn> an
+    <code><a lt="async iterator">async iterator&lt;<var ignore>T</var>&gt;</a></code> |iterator|,
+    with an ECMAScript value |reason|:
+
+    1.  Let |iteratorRecord| be |iterator|'s [=JS async iterator/underlying record=].
+    1.  Let |iteratorObj| be |iteratorRecord|.\[[Iterator]].
+    1.  Let |returnMethod| be <a abstract-op>GetMethod</a>(|iteratorObj|, "<code>return</code>").
+    1.  If |returnMethod| is an [=abrupt completion=], return [=a promise rejected with=]
+        |returnMethod|.\[[Value]].
+    1.  If |returnMethod| is <emu-val>undefined</emu-val>, return [=a promise resolved with=]
+        {{undefined}}.
+    1.  Let |returnResult| be <a abstract-op>Call</a>(|returnMethod|.\[[Value]], |iteratorObj|, « |reason| »).
+    1.  If |returnResult| is an [=abrupt completion=], return [=a promise rejected with=]
+        |returnResult|.\[[Value]].
+    1.  Let |returnPromise| be [=a promise resolved with=] |returnResult|.\[[Value]].
+    1.  Return the result of [=reacting=] to |returnPromise| with the following fulfillment steps,
+        given |returnPromiseResult|:
+        1.  If |returnPromiseResult| [=is not an Object=], [=JavaScript/throw=] a
+            <l spec=ecmascript>{{TypeError}}</l>.
+        1.  Return {{undefined}}.
+
+</div>
+
+<div class="example" id="example-js-async-sequence">
+
+    <code>concatN</code> is an [=operation=] that returns a promise that will be fulfilled with the
+    concatenation of all the strings yielded by the async sequence passed to it. It stops
+    concatenating and closes the iterator once the async sequence has yielded <var ignore>maxN</var>
+    strings.
+
+    <pre>
+        interface I {
+          Promise&lt;DOMString> concatN(async_sequence&lt;DOMString> strings, unsigned long maxN);
+        };
+    </pre>
+
+<div algorithm="concatN">
+
+    The <code>concatN(|sequence|, |maxN|)</code> method steps are:
+
+    1.  Let |promise| be [=a new promise=].
+    1.  Let |result| be the empty string.
+    1.  Let |n| be 0.
+    1.  Let |iterator| be the result of <a lt="open an async sequence">opening</a> |sequence|.
+    1.  Let |step| be a sequence of steps that will be used to process the async sequence:
+        1.  Let |next| be the result of <a lt="get an async iterator next value">getting the next value</a> of |iterator|.
+        1.  [=React=] to |next|:
+            -   If |next| was fulfilled with value |v|:
+                1.  If |v| is [=end of iteration=], [=resolve=] |promise| with |result|.
+                1.  Set |result| to the result of concatenating |result| and |v|.
+                1.  Set |n| to |n| + 1.
+                1.  If |n| is |maxN|, then:
+                    1.  Let |finish| be the result of <a lt="close an async iterator">closing</a>
+                        |iterator| with reason {{undefined}}.
+                    1.  [=React=] to |finish|:
+                        -   If |finish| was fulfilled, [=resolve=] |promise| with |result|.
+                        -   If |finish| was rejected with reason |r|, [=reject=] |promise| with |r|.
+                1.  Otherwise:
+                    1.  Call |step|.
+            -   If |next| was rejected with reason |r|, [=reject=] |promise| with |r|.
+    1.  Call |step|.
+    1.  Return |promise|.
+
+</div>
+</div>
+
+
+
+
 <h4 id="js-record" oldids="es-record">Records — record&lt;|K|, |V|&gt;</h4>
 
 IDL [=record=]&lt;|K|, |V|&gt; values are represented by
@@ -8126,7 +8497,7 @@ JavaScript Object values.
     A JavaScript value |O| is [=converted to an IDL value|converted=]
     to an IDL <code>[=record=]&lt;|K|, |V|></code> value as follows:
 
-    1.  If <a abstract-op>Type</a>(|O|) is not Object,
+    1.  If |O| [=is not an Object=],
         [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  Let |result| be a new empty instance of <code>[=record=]&lt;|K|, |V|></code>.
     1.  Let |keys| be [=?=] |O|.\[[OwnPropertyKeys]]().
@@ -8192,7 +8563,7 @@ JavaScript Object values.
     constrained among the three string types.
     The following conversions have the described results:
     <table class="data">
-        <thead><th>Value</th><th>Passed to type</th><th>Result</th></thead>
+        <thead><tr><th>Value</th><th>Passed to type</th><th>Result</th></thead>
         <tr>
             <td><code>{"😞": 1}</code></td>
             <td><code>[=record=]&lt;ByteString, double></code></td>
@@ -8236,6 +8607,24 @@ IDL [=promise type=] values are represented by JavaScript [=PromiseCapability=] 
     IDL [=promise type=] represents.
 </p>
 
+<div class=note>
+
+    When converting a JS value to a <code>Promise&lt;T></code> IDL value,
+    first the value is wrapped in an (IDL) Promise,
+    then later machinery ensures the promise correctly resolves
+    to a value of type <code>T</code>.
+
+    This means that, for example,
+    a method defined to take a <code>Promise&lt;T></code> argument
+    will automatically accept both {{Promise}} objects
+    (which must eventually resolve to a <code>T</code> object)
+    and <code>T</code> objects themselves.
+
+    (It will also, initially, accept <em>any other</em> type of object,
+    but will eventually auto-reject the promise
+    for resolving to the wrong type.)
+</div>
+
 <h5 id="js-promise-manipulation" oldids="es-promise-manipulation">Creating and manipulating Promises</h5>
 
 <div algorithm>
@@ -8244,7 +8633,7 @@ IDL [=promise type=] values are represented by JavaScript [=PromiseCapability=] 
     <code><a interface>Promise</a>&lt;<var ignore>T</var>&gt;</code> in a [=realm=] |realm|,
     perform the following steps:
 
-    1.  Let |constructor| be |realm|.\[[Intrinsics]].[[{{%Promise%}}]].
+    1.  Let |constructor| be |realm|.\[[Intrinsics]].\[[{{%Promise%}}]].
     1.  Return [=?=] [$NewPromiseCapability$](|constructor|).
 </div>
 
@@ -8256,7 +8645,7 @@ IDL [=promise type=] values are represented by JavaScript [=PromiseCapability=] 
 
     1.  Let |value| be the result of [=converted to a JavaScript value|converting=] |x| to a
         JavaScript value.
-    1.  Let |constructor| be |realm|.\[[Intrinsics]].[[{{%Promise%}}]].
+    1.  Let |constructor| be |realm|.\[[Intrinsics]].\[[{{%Promise%}}]].
     1.  Let |promiseCapability| be [=?=] [$NewPromiseCapability$](|constructor|).
     1.  Perform [=!=] [$Call$](|promiseCapability|.\[[Resolve]], <emu-val>undefined</emu-val>,
         « |value| »).
@@ -8269,7 +8658,7 @@ IDL [=promise type=] values are represented by JavaScript [=PromiseCapability=] 
     <code><a interface>Promise</a>&lt;<var ignore>T</var>&gt;</code>, with reason |r| (a
     JavaScript value) in a [=realm=] |realm|, perform the following steps:
 
-    1.  Let |constructor| be |realm|.\[[Intrinsics]].[[{{%Promise%}}]].
+    1.  Let |constructor| be |realm|.\[[Intrinsics]].\[[{{%Promise%}}]].
     1.  Let |promiseCapability| be [=?=] [$NewPromiseCapability$](|constructor|).
     1.  Perform [=!=] [$Call$](|promiseCapability|.\[[Reject]], <emu-val>undefined</emu-val>,
         « |r| »).
@@ -8311,7 +8700,7 @@ IDL [=promise type=] values are represented by JavaScript [=PromiseCapability=] 
             the result of performing them, given |value| if |T| is not {{undefined}}. Otherwise, let
             |result| be |value|.
         1.  Return |result|, [=converted to a JavaScript value=].
-    1.  Let |onFulfilled| be [$CreateBuiltinFunction$](|onFulfilledSteps|, « »):
+    1.  Let |onFulfilled| be [$CreateBuiltinFunction$](|onFulfilledSteps|, 1, "", « »).
     1.  Let |onRejectedSteps| be the following steps given argument |R|:
         1.  Let |reason| be the result of [=converted to an IDL value|converting=]
             |R| to an IDL value of type {{any}}.
@@ -8319,14 +8708,15 @@ IDL [=promise type=] values are represented by JavaScript [=PromiseCapability=] 
             the result of performing them, given |reason|. Otherwise, let |result| be
             [=a promise rejected with=] |reason|.
         1.  Return |result|, [=converted to a JavaScript value=].
-    1.  Let |onRejected| be [$CreateBuiltinFunction$](|onRejectedSteps|, « »):
-    1.  Let |constructor| be |promise|.\[[Promise]].\[[Realm]].\[[Intrinsics]].[[{{%Promise%}}]].
+    1.  Let |onRejected| be [$CreateBuiltinFunction$](|onRejectedSteps|, 1, "", « »).
+    1.  Let |constructor| be |promise|.\[[Promise]].\[[Realm]].\[[Intrinsics]].\[[{{%Promise%}}]].
     1.  Let |newCapability| be [=?=] [$NewPromiseCapability$](|constructor|).
 
         Note: Not all callers will use the returned {{Promise}}. Implementations might wish to
         avoid creating |newCapability| in those cases.
-    1.  Return [$PerformPromiseThen$](|promise|.\[[Promise]], |onFulfilled|, |onRejected|,
+    1.  Perform [$PerformPromiseThen$](|promise|.\[[Promise]], |onFulfilled|, |onRejected|,
         |newCapability|).
+    1.  Return |newCapability|.
 
     Note: This algorithm will behave in a very similar way to the
     {{%Promise.prototype.then%|promise.then()}} method.
@@ -8364,13 +8754,13 @@ IDL [=promise type=] values are represented by JavaScript [=PromiseCapability=] 
     |successSteps| that take a [=list=] of |T| values and failure steps |failureSteps| that take a
     rejection reason {{any}} value, perform the following steps:
 
-    1.  Let |fullfilledCount| be 0.
+    1.  Let |fulfilledCount| be 0.
     1.  Let |rejected| be false.
     1.  Let |rejectionHandlerSteps| be the following steps given |arg|:
         1.  If |rejected| is true, abort these steps.
         1.  Set |rejected| to true.
         1.  Perform |failureSteps| given |arg|.
-    1.  Let |rejectionHandler| be [$CreateBuiltinFunction$](|rejectionHandlerSteps|, « »):
+    1.  Let |rejectionHandler| be [$CreateBuiltinFunction$](|rejectionHandlerSteps|, 1, "", « »).
     1.  Let |total| be |promises|'s [=list/size=].
     1.  If |total| is 0, then:
         1.  [=Queue a microtask=] to perform |successSteps| given « ».
@@ -8379,11 +8769,11 @@ IDL [=promise type=] values are represented by JavaScript [=PromiseCapability=] 
     1.  Let |result| be a [=list=] containing |total| null values.
     1.  [=list/For each=] |promise| of |promises|:
         1.  Let |promiseIndex| be |index|.
-        1.  Let |fulfillmentHandler| be the following steps given |arg|:
+        1.  Let |fulfillmentHandlerSteps| be the following steps given |arg|:
             1.  Set |result|[|promiseIndex|] to |arg|.
-            1.  Set |fullfilledCount| to |fullfilledCount| + 1.
-            1.  If |fullfilledCount| equals |total|, then perform |successSteps| given |result|.
-        1.  Let |fulfillmentHandler| be [$CreateBuiltinFunction$](|fulfillmentHandler|, « »):
+            1.  Set |fulfilledCount| to |fulfilledCount| + 1.
+            1.  If |fulfilledCount| equals |total|, then perform |successSteps| given |result|.
+        1.  Let |fulfillmentHandler| be [$CreateBuiltinFunction$](|fulfillmentHandlerSteps|, 1, "", « »).
         1.  Perform [$PerformPromiseThen$](|promise|, |fulfillmentHandler|, |rejectionHandler|).
         1.  Set |index| to |index| + 1.
 </div>
@@ -8645,27 +9035,27 @@ that correspond to the union's [=member types=].
             [=implements=], then return the IDL value that is a reference to the object |V|.
         1.  If |types| includes {{object}}, then return the IDL value
             that is a reference to the object |V|.
-    1.  If <a abstract-op>Type</a>(|V|) is Object, |V| has an \[[ArrayBufferData]]
+    1.  If |V| [=is an Object=], |V| has an \[[ArrayBufferData]]
         [=/internal slot=], and <a abstract-op>IsSharedArrayBuffer</a>(|V|) is false, then:
         1.  If |types| includes {{ArrayBuffer}}, then return the
             result of [=converted to an IDL value|converting=]
             |V| to {{ArrayBuffer}}.
         1.  If |types| includes {{object}}, then return the IDL value
             that is a reference to the object |V|.
-    1.  If <a abstract-op>Type</a>(|V|) is Object, |V|, has an \[[ArrayBufferData]]
+    1.  If |V| [=is an Object=], |V|, has an \[[ArrayBufferData]]
         [=/internal slot=], and <a abstract-op>IsSharedArrayBuffer</a>(|V|) is true, then:
         1.  If |types| includes {{SharedArrayBuffer}}, then return the
             result of [=converted to an IDL value|converting=]
             |V| to {{SharedArrayBuffer}}.
         1.  If |types| includes {{object}}, then return the IDL value
             that is a reference to the object |V|.
-    1.  If <a abstract-op>Type</a>(|V|) is Object and |V| has a \[[DataView]] [=/internal slot=], then:
+    1.  If |V| [=is an Object=] and |V| has a \[[DataView]] [=/internal slot=], then:
         1.  If |types| includes {{DataView}}, then return the
             result of [=converted to an IDL value|converting=]
             |V| to {{DataView}}.
         1.  If |types| includes {{object}}, then return the IDL value
             that is a reference to the object |V|.
-    1.  If <a abstract-op>Type</a>(|V|) is Object and |V| has a \[[TypedArrayName]] [=/internal slot=], then:
+    1.  If |V| [=is an Object=] and |V| has a \[[TypedArrayName]] [=/internal slot=], then:
         1.  If |types| includes a [=typed array type=]
             whose name is the value of |V|'s \[[TypedArrayName]] [=/internal slot=], then return the
             result of [=converted to an IDL value|converting=]
@@ -8679,7 +9069,19 @@ that correspond to the union's [=member types=].
             |V| to that callback function type.
         1.  If |types| includes {{object}}, then return the IDL value
             that is a reference to the object |V|.
-    1.  If <a abstract-op>Type</a>(|V|) is Object, then:
+    1.  If |V| [=is an Object=], then:
+        1.  If |types| includes an [=async sequence type=], then
+            1. If |types| does not include a [=string type=] or |V| does not have a \[[StringData]] [=/internal slot=], then
+                1.  Let |asyncMethod| be [=?=] <a abstract-op>GetMethod</a>(|V|, {{%Symbol.asyncIterator%}}).
+                1.  If |asyncMethod| is not <emu-val>undefined</emu-val>,
+                    return an IDL [=async sequence=] value with [=JS async sequence/object=]
+                    set to |V|, [=JS async sequence/method=] set to |asyncMethod|, and
+                    [=JS async sequence/type=] set to "<code>async</code>".
+                1.  Let |syncMethod| be [=?=] <a abstract-op>GetMethod</a>(|V|, {{%Symbol.iterator%}}).
+                1.  If |syncMethod| is not <emu-val>undefined</emu-val>,
+                    return an IDL [=async sequence=] value with [=JS async sequence/object=]
+                    set to |V|, [=JS async sequence/method=] set to |syncMethod|, and
+                    [=JS async sequence/type=] set to "<code>sync</code>".
         1.  If |types| includes a [=sequence type=], then
             1.  Let |method| be [=?=] <a abstract-op>GetMethod</a>(|V|, {{%Symbol.iterator%}}).
             1.  If |method| is not <emu-val>undefined</emu-val>,
@@ -8704,15 +9106,15 @@ that correspond to the union's [=member types=].
             |V| to that [=callback interface type=].
         1.  If |types| includes {{object}}, then return the IDL value
             that is a reference to the object |V|.
-    1.  If <a abstract-op>Type</a>(|V|) is Boolean, then:
+    1.  If |V| [=is a Boolean=], then:
         1.  If |types| includes {{boolean}},
             then return the result of [=converted to an IDL value|converting=]
             |V| to {{boolean}}.
-    1.  If <a abstract-op>Type</a>(|V|) is Number, then:
+    1.  If |V| [=is a Number=], then:
         1.  If |types| includes a [=numeric type=],
             then return the result of [=converted to an IDL value|converting=]
             |V| to that [=numeric type=].
-    1.  If <a abstract-op>Type</a>(|V|) is BigInt, then:
+    1.  If |V| [=is a BigInt=], then:
         1.  If |types| includes {{bigint}},
             then return the result of [=converted to an IDL value|converting=]
             |V| to {{bigint}}
@@ -8749,13 +9151,13 @@ that correspond to the union's [=member types=].
 A value of an IDL {{ArrayBuffer}} is represented by an object of the corresponding JavaScript class.
 If it is not [=extended attributes associated with|associated with=] the [{{AllowResizable}}]
 [=extended attribute=], it can only be backed by JavaScript <l spec=ecmascript>{{ArrayBuffer}}</l>
-objects |V| for which <a abstract-op>IsResizableArrayBuffer</a>(|V|) is false.
+objects |V| for which <a abstract-op>IsFixedLengthArrayBuffer</a>(|V|) is true.
 
 A value of an IDL {{SharedArrayBuffer}} is represented by an object of the corresponding JavaScript
 class. If it is not [=extended attributes associated with|associated with=] the [{{AllowResizable}}]
 [=extended attribute=], it can only be backed by JavaScript
 <l spec=ecmascript>{{SharedArrayBuffer}}</l> objects |V| for which
-<a abstract-op>IsResizableArrayBuffer</a>(|V|) is false.
+<a abstract-op>IsFixedLengthArrayBuffer</a>(|V|) is true.
 
 Values of the IDL [=buffer view types=] are represented by objects of the corresponding JavaScript
 class, with the following additional restrictions on those objects.
@@ -8765,7 +9167,7 @@ class, with the following additional restrictions on those objects.
         If the type is not [=extended attributes associated with|associated with=] either the
         [{{AllowResizable}}] or [{{AllowShared}}] [=extended attribute=], if applicable, they can
         only be backed by JavaScript <l spec=ecmascript>{{ArrayBuffer}}</l> objects |V| for which <a
-        abstract-op>IsResizableArrayBuffer</a>(|V|) is false.
+        abstract-op>IsFixedLengthArrayBuffer</a>(|V|) is true.
     </li>
     <li>
         If the type is [=extended attributes associated with|associated with=] the
@@ -8778,7 +9180,7 @@ class, with the following additional restrictions on those objects.
         [=extended attribute=] but not with the [{{AllowResizable}}] [=extended attribute=], they
         can only be backed by JavaScript <l spec=ecmascript>{{ArrayBuffer}}</l> and
         <l spec=ecmascript>{{SharedArrayBuffer}}</l> objects |V| for which
-        <a abstract-op>IsResizableArrayBuffer</a>(|V|) is false.
+        <a abstract-op>IsFixedLengthArrayBuffer</a>(|V|) is true.
     </li>
     <li>
         If the type is [=extended attributes associated with|associated with=] both the
@@ -8794,14 +9196,14 @@ class, with the following additional restrictions on those objects.
     A JavaScript value |V| is [=converted to an IDL value|converted=]
     to an IDL {{ArrayBuffer}} value by running the following algorithm:
 
-    1.  If <a abstract-op>Type</a>(|V|) is not Object,
+    1.  If |V| [=is not an Object=],
         or |V| does not have an \[[ArrayBufferData]] [=/internal slot=],
         then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  If <a abstract-op>IsSharedArrayBuffer</a>(|V|) is true, then [=JavaScript/throw=]
         a <l spec=ecmascript>{{TypeError}}</l>.
     1.  If the conversion is not to an IDL type
         [=extended attributes associated with|associated with=] the [{{AllowResizable}}]
-        [=extended attribute=], and <a abstract-op>IsResizableArrayBuffer</a>(|V|) is true,
+        [=extended attribute=], and <a abstract-op>IsFixedLengthArrayBuffer</a>(|V|) is false,
         then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  Return the IDL {{ArrayBuffer}} value that is a reference
         to the same object as |V|.
@@ -8812,14 +9214,14 @@ class, with the following additional restrictions on those objects.
     A JavaScript value |V| is [=converted to an IDL value|converted=]
     to an IDL {{SharedArrayBuffer}} value by running the following algorithm:
 
-    1.  If <a abstract-op>Type</a>(|V|) is not Object,
+    1.  If |V| [=is not an Object=],
         or |V| does not have an \[[ArrayBufferData]] [=/internal slot=],
         then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  If <a abstract-op>IsSharedArrayBuffer</a>(|V|) is false, then [=JavaScript/throw=]
         a <l spec=ecmascript>{{TypeError}}</l>.
     1.  If the conversion is not to an IDL type
         [=extended attributes associated with|associated with=] the [{{AllowResizable}}]
-        [=extended attribute=], and <a abstract-op>IsResizableArrayBuffer</a>(|V|) is true,
+        [=extended attribute=], and <a abstract-op>IsFixedLengthArrayBuffer</a>(|V|) is false,
         then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  Return the IDL {{SharedArrayBuffer}} value that is a reference
         to the same object as |V|.
@@ -8830,7 +9232,7 @@ class, with the following additional restrictions on those objects.
     A JavaScript value |V| is [=converted to an IDL value|converted=]
     to an IDL {{DataView}} value by running the following algorithm:
 
-    1.  If <a abstract-op>Type</a>(|V|) is not Object,
+    1.  If |V| [=is not an Object=],
         or |V| does not have a \[[DataView]] [=/internal slot=],
         then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  If the conversion is not to an IDL type
@@ -8839,7 +9241,7 @@ class, with the following additional restrictions on those objects.
         then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  If the conversion is not to an IDL type
         [=extended attributes associated with|associated with=] the [{{AllowResizable}}]
-        [=extended attribute=], and <a abstract-op>IsResizableArrayBuffer</a>(|V|.\[[ViewedArrayBuffer]]) is true,
+        [=extended attribute=], and <a abstract-op>IsFixedLengthArrayBuffer</a>(|V|.\[[ViewedArrayBuffer]]) is false,
         then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  Return the IDL {{DataView}} value that is a reference
         to the same object as |V|.
@@ -8864,7 +9266,7 @@ class, with the following additional restrictions on those objects.
     by running the following algorithm:
 
     1.  Let |T| be the IDL type |V| is being converted to.
-    1.  If <a abstract-op>Type</a>(|V|) is not Object,
+    1.  If |V| [=is not an Object=],
         or |V| does not have a \[[TypedArrayName]] [=/internal slot=]
         with a value equal to |T|'s name,
         then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
@@ -8874,7 +9276,7 @@ class, with the following additional restrictions on those objects.
         then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  If the conversion is not to an IDL type
         [=extended attributes associated with|associated with=] the [{{AllowResizable}}]
-        [=extended attribute=], and <a abstract-op>IsResizableArrayBuffer</a>(|V|.\[[ViewedArrayBuffer]]) is true,
+        [=extended attribute=], and <a abstract-op>IsFixedLengthArrayBuffer</a>(|V|.\[[ViewedArrayBuffer]]) is false,
         then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
     1.  Return the IDL value of type |T| that is a reference to the same object as |V|.
 </div>
@@ -8894,7 +9296,7 @@ a reference to the same object that the IDL value represents.
     |bytes| in a [=realm=] |realm|:
 
     1.  Let |jsArrayBuffer| be [=?=]
-        [$AllocateArrayBuffer$](|realm|.\[[Intrinsics]].[[{{%ArrayBuffer%}}]], |bytes|'s
+        [$AllocateArrayBuffer$](|realm|.\[[Intrinsics]].\[[{{%ArrayBuffer%}}]], |bytes|'s
         [=byte sequence/length=]).
     1.  Let |arrayBuffer| be the result of [=converted to an IDL value|converting=] |jsArrayBuffer|
         to an IDL value of type {{ArrayBuffer}}.
@@ -8907,7 +9309,7 @@ a reference to the same object that the IDL value represents.
     [=byte sequence=] |bytes| in a [=realm=] |realm|:
 
     1.  Let |jsSharedArrayBuffer| be [=?=]
-        [$AllocateSharedArrayBuffer$](|realm|.\[[Intrinsics]].[[{{%SharedArrayBuffer%}}]], |bytes|'s
+        [$AllocateSharedArrayBuffer$](|realm|.\[[Intrinsics]].\[[{{%SharedArrayBuffer%}}]], |bytes|'s
         [=byte sequence/length=]).
     1.  Let |sharedArrayBuffer| be the result of [=converted to an IDL value|converting=]
         |jsSharedArrayBuffer| to an IDL value of type {{SharedArrayBuffer}}.
@@ -8951,8 +9353,8 @@ a reference to the same object that the IDL value represents.
     1.  If [$IsDetachedBuffer$](|jsArrayBuffer|) is true, then return the empty
         [=byte sequence=].
     1.  Let |bytes| be a new [=byte sequence=] of [=byte sequence/length=] equal to |length|.
-    1.  For |i| in [=the range=] |offset| to |offset| + |length| &minus; 1, inclusive, set
-        |bytes|[|i| &minus; |offset|] to [$GetValueFromBuffer$](|jsArrayBuffer|, |i|, Uint8,
+    1.  For |i| in [=the exclusive range|the range=] |offset| to |offset| + |length|, exclusive,
+        set |bytes|[|i| &minus; |offset|] to [$GetValueFromBuffer$](|jsArrayBuffer|, |i|, Uint8,
         true, Unordered).
     1.  Return |bytes|.
 </div>
@@ -8993,9 +9395,10 @@ a reference to the same object that the IDL value represents.
         |arrayBuffer| to a JavaScript value.
     1.  Assert: |bytes|'s [=byte sequence/length=] ≤ |jsArrayBuffer|.\[[ArrayBufferByteLength]]
         &minus; |startingOffset|.
-    1.  For |i| in [=the range=] |startingOffset| to |startingOffset| + |bytes|'s [=byte
-        sequence/length=] &minus; 1, inclusive, perform [$SetValueInBuffer$](|jsArrayBuffer|,
-        |i|, Uint8, |bytes|[|i| - |startingOffset|], true, Unordered).
+    1.  For |i| in [=the exclusive range|the range=] |startingOffset| to |startingOffset| +
+        |bytes|'s [=byte sequence/length=], exclusive, perform
+        [$SetValueInBuffer$](|jsArrayBuffer|, |i|, Uint8, |bytes|[|i| - |startingOffset|], true,
+        Unordered).
 </div>
 
 <div algorithm="ArrayBufferView/write">
@@ -9076,14 +9479,14 @@ a reference to the same object that the IDL value represents.
 
     1.  Let |jsArrayBuffer| be the result of [=converted to a JavaScript value|converting=]
         |arrayBuffer| to a JavaScript value.
-    1.  If [$IsDetachedBuffer$](|jsArrayBuffer|) is false, then [=JavaScript/throw=] a
+    1.  If [$IsDetachedBuffer$](|jsArrayBuffer|) is true, then [=JavaScript/throw=] a
         <l spec=ecmascript>{{TypeError}}</l>.
     1.  Let |arrayBufferData| be |jsArrayBuffer|.\[[ArrayBufferData]].
     1.  Let |arrayBufferByteLength| be |jsArrayBuffer|.\[[ArrayBufferByteLength]].
     1.  Perform [=?=] [$DetachArrayBuffer$](|jsArrayBuffer|).
     1.  If |targetRealm| is not given, let |targetRealm| be the [=current realm=].
     1.  Let |jsTransferred| be [=?=]
-        [$AllocateArrayBuffer$](|targetRealm|.\[[Intrinsics]].[[{{%ArrayBuffer%}}]], 0).
+        [$AllocateArrayBuffer$](|targetRealm|.\[[Intrinsics]].\[[{{%ArrayBuffer%}}]], 0).
     1.  Set |jsTransferred|.\[[ArrayBufferData]] to |arrayBufferData|.
     1.  Set |jsTransferred|.\[[ArrayBufferByteLength]] to |arrayBufferByteLength|.
     1.  Return the result of [=converted to an IDL value|converting=] |jsTransferred| to an IDL
@@ -9185,23 +9588,25 @@ whose presence affects the JavaScript binding.
 
 <h4 id="AllowResizable" extended-attribute lt="AllowResizable">[AllowResizable]</h4>
 
-If the [{{AllowResizable}}] [=extended attribute=] appears on a [=buffer type=], it creates a new
-IDL type that allows for the respective corresponding JavaScript <l spec=ecmascript>{{ArrayBuffer}}</l>
-or <l spec=ecmascript>{{SharedArrayBuffer}}</l> object to be resizable.
+If the [{{AllowResizable}}] [=extended attribute=] appears on a [=potentially nullable=]
+[=buffer type=], it creates a new IDL type that allows for the respective corresponding JavaScript
+<l spec=ecmascript>{{ArrayBuffer}}</l> or <l spec=ecmascript>{{SharedArrayBuffer}}</l> object to be
+resizable.
 
-If the [{{AllowResizable}}] [=extended attribute=] appears on one of the [=buffer view types=] and
-the [{{AllowShared}}] [=extended attribute=] does not, it creates a new IDL type that allows the
-buffer view type to be backed by a JavaScript <l spec=ecmascript>{{ArrayBuffer}}</l> that is
-resizable, instead of only by a fixed-length <l spec=ecmascript>{{ArrayBuffer}}</l>.
+If the [{{AllowResizable}}] [=extended attribute=] appears on a [=potentially nullable=]
+[=buffer view type=] and the [{{AllowShared}}] [=extended attribute=] does not, it creates a new
+IDL type that allows the buffer view type to be backed by a JavaScript
+<l spec=ecmascript>{{ArrayBuffer}}</l> that is resizable, instead of only by a fixed-length
+<l spec=ecmascript>{{ArrayBuffer}}</l>.
 
 If the [{{AllowResizable}}] [=extended attribute=] and the [{{AllowShared}}] [=extended attribute=]
-both appear on one of the [=buffer view types=], it creates a new IDL type that allows the buffer
-view type to be additionally backed by a JavaScript <l spec=ecmascript>{{SharedArrayBuffer}}</l>
-that is growable.
+both appear on a [=potentially nullable=] [=buffer view type=], it creates a new IDL type that
+allows the buffer view type to be additionally backed by a JavaScript
+<l spec=ecmascript>{{SharedArrayBuffer}}</l> that is growable.
 
 The [{{AllowResizable}}] extended attribute must [=takes no arguments|take no arguments=].
 
-A type that is not a [=buffer source type=] must not be
+A type that is not a [=potentially nullable=] [=buffer source type=] must not be
 [=extended attributes associated with|associated with=] the [{{AllowResizable}}] extended attribute.
 
 See the rules for converting JavaScript values to IDL [=buffer source types=] in
@@ -9212,13 +9617,13 @@ See the <a href="#example-allowresizable-allowshared">example</a> in [[#AllowSha
 
 <h4 id="AllowShared" extended-attribute lt="AllowShared">[AllowShared]</h4>
 
-If the [{{AllowShared}}] [=extended attribute=] appears on one of the [=buffer view types=], it
-creates a new IDL type that allows the object to be backed by an {{SharedArrayBuffer}} instead of
-only by an {{ArrayBuffer}}.
+If the [{{AllowShared}}] [=extended attribute=] appears on a [=potentially nullable=]
+[=buffer view type=], it creates a new IDL type that allows the object to be backed by a
+{{SharedArrayBuffer}} instead of only by an {{ArrayBuffer}}.
 
 The [{{AllowShared}}] extended attribute must [=takes no arguments|take no arguments=].
 
-A type that is not a [=buffer view type=] must not be
+A type that is not a [=potentially nullable=] [=buffer view type=] must not be
 [=extended attributes associated with|associated with=] the [{{AllowShared}}] extended attribute.
 
 See the rules for converting JavaScript values to IDL [=buffer view types=] in
@@ -9266,8 +9671,8 @@ See the rules for converting JavaScript values to IDL [=buffer view types=] in
 
 <h4 id="Clamp" extended-attribute lt="Clamp">[Clamp]</h4>
 
-If the [{{Clamp}}] [=extended attribute=] appears on one of the [=integer types=], it creates a new
-IDL type such that that when a JavaScript Number is converted to the IDL type,
+If the [{{Clamp}}] [=extended attribute=] appears on a [=potentially nullable=] [=integer type=],
+it creates a new IDL type such that when a JavaScript Number is converted to the IDL type,
 out-of-range values will be clamped to the range of valid values, rather than using the operators
 that use a modulo operation (<a abstract-op>ToInt32</a>, <a abstract-op>ToUint32</a>, etc.).
 
@@ -9277,8 +9682,9 @@ extended attribute must
 
 A type annotated with the [{{Clamp}}] extended attribute must not appear in a [=read only=]
 attribute. A type must not be [=extended attributes associated with|associated with=] both the
-[{{Clamp}}] and [{{EnforceRange}}] extended attributes. A type that is not an [=integer type=] must
-not be [=extended attributes associated with|associated with=] the [{{Clamp}}] extended attribute.
+[{{Clamp}}] and [{{EnforceRange}}] extended attributes. A type that is not a
+[=potentially nullable=] [=integer type=] must not be
+[=extended attributes associated with|associated with=] the [{{Clamp}}] extended attribute.
 
 See the rules for converting JavaScript values to the various IDL integer
 types in [[#js-integer-types]]
@@ -9478,10 +9884,11 @@ that [=has default method steps=] defined.
 
 <h4 id="EnforceRange" extended-attribute lt="EnforceRange">[EnforceRange]</h4>
 
-If the [{{EnforceRange}}] [=extended attribute=] appears on one of the [=integer types=], it creates
-a new IDL type such that that when a JavaScript Number is converted to the IDL
-type, out-of-range values will cause an exception to be thrown, rather than being converted to a
-valid value using using the operators that use a modulo operation (<a abstract-op>ToInt32</a>, <a abstract-op>ToUint32</a>, etc.).
+If the [{{EnforceRange}}] [=extended attribute=] appears on a [=potentially nullable=]
+[=integer type=], it creates a new IDL type such that when a JavaScript Number is converted to
+the IDL type, out-of-range values will cause an exception to be thrown, rather than being converted
+to a valid value using the operators that use a modulo operation
+(<a abstract-op>ToInt32</a>, <a abstract-op>ToUint32</a>, etc.).
 The Number will be rounded toward zero before being checked against its range.
 
 The [{{EnforceRange}}]
@@ -9490,9 +9897,9 @@ extended attribute must
 
 A type annotated with the [{{EnforceRange}}] extended attribute must not appear in a
 [=read only=] attribute. A type must not be [=extended attributes associated with|associated with=]
-both the [{{Clamp}}] and [{{EnforceRange}}] extended attributes. A type that is not an
-[=integer type=] must not be [=extended attributes associated with|associated with=] the
-[{{EnforceRange}}] extended attribute.
+both the [{{Clamp}}] and [{{EnforceRange}}] extended attributes. A type that is not a
+[=potentially nullable=] [=integer type=] must not be
+[=extended attributes associated with|associated with=] the [{{EnforceRange}}] extended attribute.
 
 See the rules for converting JavaScript values to the various IDL integer
 types in [[#js-type-mapping]]
@@ -10709,15 +11116,17 @@ for the specific requirements that the use of
 <h4 id="LegacyNullToEmptyString" extended-attribute lt="LegacyNullToEmptyString" oldids="TreatNullAs">[LegacyNullToEmptyString]</h4>
 
 If the [{{LegacyNullToEmptyString}}] [=extended attribute=] appears on the {{DOMString}} or {{USVString}} type,
-it creates a new IDL type such that that when a JavaScript <emu-val>null</emu-val> is converted to the IDL type,
+it creates a new IDL type such that when a JavaScript <emu-val>null</emu-val> is converted to the IDL type,
 it will be handled differently from its default handling. Instead of being stringified to
 "<code>null</code>", which is the default, it will be converted to the empty string.
 
 The [{{LegacyNullToEmptyString}}] extended attribute must not be
 [=extended attribute associated with|associated with=] a type that is not {{DOMString}} or {{USVString}}.
 
-Note: This means that even <code class="idl">DOMString?</code> must not use [{{LegacyNullToEmptyString}}], since
-<emu-val>null</emu-val> is a valid value of that type.
+Note: Unlike the other [=extended attributes=] that are [=applicable to types=],
+[{{LegacyNullToEmptyString}}] cannot be used on a [=nullable type=] such as
+<code class="idl">DOMString?</code>, since <emu-val>null</emu-val> is already a valid value of that
+type.
 
 See [[#js-DOMString]] for the specific requirements that the use of [{{LegacyNullToEmptyString}}] entails.
 
@@ -11111,7 +11520,7 @@ are to be implemented.
 
         m.constructor === DOMMatrix;       // Evaluates to true.
         m.constructor === WebKitCSSMatrix; // Evaluates to true.
-        {}.toString.call(m);               // Evaluates to '[object DOMMatrix]'.
+        ({}).toString.call(m);             // Evaluates to '[object DOMMatrix]'.
     </pre>
 </div>
 
@@ -11205,7 +11614,7 @@ Note: The HTML Standard defines how a security check is performed. [[!HTML]]
 
             then remove from |S| all other entries.
 
-        1.  Otherwise: if <a abstract-op>Type</a>(|V|) is Object, |V| has an \[[ArrayBufferData]] [=/internal slot=], and
+        1.  Otherwise: if |V| [=is an Object=], |V| has an \[[ArrayBufferData]] [=/internal slot=], and
             there is an entry in |S| that has one of the following types at position |i| of its type list,
             *   {{ArrayBuffer}}
             *   {{SharedArrayBuffer}}
@@ -11217,7 +11626,7 @@ Note: The HTML Standard defines how a security check is performed. [[!HTML]]
 
             then remove from |S| all other entries.
 
-        1.  Otherwise: if <a abstract-op>Type</a>(|V|) is Object, |V| has a \[[DataView]] [=/internal slot=], and
+        1.  Otherwise: if |V| [=is an Object=], |V| has a \[[DataView]] [=/internal slot=], and
             there is an entry in |S| that has one of the following types at position |i| of its type list,
             *   {{DataView}}
             *   {{object}}
@@ -11228,7 +11637,7 @@ Note: The HTML Standard defines how a security check is performed. [[!HTML]]
 
             then remove from |S| all other entries.
 
-        1.  Otherwise: if <a abstract-op>Type</a>(|V|) is Object, |V| has a \[[TypedArrayName]] [=/internal slot=], and
+        1.  Otherwise: if |V| [=is an Object=], |V| has a \[[TypedArrayName]] [=/internal slot=], and
             there is an entry in |S| that has one of the following types at position |i| of its type list,
             *   a [=typed array type=] whose name
                 is equal to the value of |V|'s \[[TypedArrayName]] [=/internal slot=]
@@ -11251,14 +11660,40 @@ Note: The HTML Standard defines how a security check is performed. [[!HTML]]
 
             then remove from |S| all other entries.
 
-        1.  Otherwise: if <a abstract-op>Type</a>(|V|) is Object and
+        1.  Otherwise: if |V| [=is an Object=] and
+            there is an entry in |S| that has one of the
+            following types at position |i| of its type list,
+            *   an [=async sequence type=]
+            *   a [=nullable type|nullable=] version of any of the above types
+            *   an [=annotated type=] whose [=annotated types/inner type=] is one of the above types
+            *   a [=union type=], [=nullable type|nullable=] union type, or [=annotated type|annotated=] union type
+                that has one of the above types in its [=flattened member types=]
+
+            and the following are not all true,
+            *   |V| has a \[[StringData]] [=/internal slot=]
+            *   |S| has one of the following types at position |i| of its type list,
+                *   a [=string type=]
+                *   a [=nullable type|nullable=] version of a [=string type=]
+                *   an [=annotated type=] whose [=annotated types/inner type=] is a [=string type=]
+                *   a [=union type=], [=nullable type|nullable=] union type, or [=annotated type|annotated=] union type
+                    that has one of the above types in its [=flattened member types=]
+
+            and after performing the following steps,
+
+            1.  Let |method| be [=?=] <a abstract-op>GetMethod</a>(|V|, {{%Symbol.asyncIterator%}}).
+            1.  If |method| is <emu-val>undefined</emu-val>, then set |method| to [=?=] <a abstract-op>GetMethod</a>(|V|, {{%Symbol.iterator%}}).
+
+            |method| is not <emu-val>undefined</emu-val>, then remove from |S| all
+            other entries.
+
+        1.  Otherwise: if |V| [=is an Object=] and
             there is an entry in |S| that has one of the
             following types at position |i| of its type list,
             *   a [=sequence type=]
-            *   a [=nullable type|nullable=] [=sequence type=]
-            *   an [=annotated type=] whose [=annotated types/inner type=] is a [=sequence type=]
+            *   a [=nullable type|nullable=] version of any of the above types
+            *   an [=annotated type=] whose [=annotated types/inner type=] is one of the above types
             *   a [=union type=], [=nullable type|nullable=] union type, or [=annotated type|annotated=] union type
-                that has a [=sequence type=] in its [=flattened member types=]
+                that has one of the above types in its [=flattened member types=]
 
             and after performing the following steps,
 
@@ -11267,7 +11702,7 @@ Note: The HTML Standard defines how a security check is performed. [[!HTML]]
             |method| is not <emu-val>undefined</emu-val>, then remove from |S| all
             other entries.
 
-        1.  Otherwise: if <a abstract-op>Type</a>(|V|) is Object and
+        1.  Otherwise: if |V| [=is an Object=] and
             there is an entry in |S| that has one of the following types at position |i| of its type list,
             *   a [=callback interface type=]
             *   a [=dictionary type=]
@@ -11280,7 +11715,7 @@ Note: The HTML Standard defines how a security check is performed. [[!HTML]]
 
             then remove from |S| all other entries.
 
-        1.  Otherwise: if <a abstract-op>Type</a>(|V|) is Boolean
+        1.  Otherwise: if |V| [=is a Boolean=]
             and there is an entry in |S| that has one of the following types at position |i| of its type list,
             *   {{boolean}}
             *   a [=nullable type|nullable=] {{boolean}}
@@ -11290,7 +11725,7 @@ Note: The HTML Standard defines how a security check is performed. [[!HTML]]
 
             then remove from |S| all other entries.
 
-        1.  Otherwise: if <a abstract-op>Type</a>(|V|) is Number
+        1.  Otherwise: if |V| [=is a Number=]
             and there is an entry in |S| that has one of the following types at position |i| of its type list,
             *   a [=numeric type=]
             *   a [=nullable type|nullable=] [=numeric type=]
@@ -11300,7 +11735,7 @@ Note: The HTML Standard defines how a security check is performed. [[!HTML]]
 
             then remove from |S| all other entries.
 
-        1.  Otherwise: if <a abstract-op>Type</a>(|V|) is BigInt
+        1.  Otherwise: if |V| [=is a BigInt=]
             and there is an entry in |S| that has one of the following types at position |i| of its type list,
             *   {{bigint}}
             *   a [=nullable type|nullable=] {{bigint}}
@@ -11418,11 +11853,11 @@ Note: The HTML Standard defines how a security check is performed. [[!HTML]]
     Generally, the inspection of the value at the distinguishing argument index does not have any
     side effects, and the only side effects in the overload resolution algorithm are the result of
     converting the JavaScript values to IDL values.
-    (An exception exists when one of the overloads has a [=sequence type=] or [=frozen array type=]
-    at the distinguishing argument index.
-    In this case, we attempt to get the {{%Symbol.iterator%}} property to determine the appropriate
-    overload, and perform the conversion of the distinguishing argument separately before continuing
-    with the next step.)
+    (An exception exists when one of the overloads has an [=async sequence type=], [=sequence type=]
+    or [=frozen array type=] at the distinguishing argument index.
+    In this case, we attempt to get the {{%Symbol.asyncIterator%}} / {{%Symbol.iterator%}} property
+    to determine the appropriate overload, and perform the conversion of the distinguishing argument
+    separately before continuing with the next step.)
 
     At this point, we have determined which overload to use.  We now
     convert the remaining arguments, from the distinguishing argument onwards,
@@ -11555,10 +11990,16 @@ default interfaces do not have such steps.
         1.  Assert: |O| is an object that [=implements=] |I|.
         1.  Assert: |O|.\[[Realm]] is |realm|.
         1.  Return |O|.
-    1.  Let |constructorProto| be |realm|.\[[Intrinsics]].[[{{%Function.prototype%}}]].
+    1.  Let |constructorProto| be |realm|.\[[Intrinsics]].\[[{{%Function.prototype%}}]].
     1.  If |I| inherits from some other interface |P|,
         then set |constructorProto| to the [=interface object=] of |P| in |realm|.
-    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, « \[[Unforgeables]] »,
+    1.  Let |length| be 0.
+    1.  If |I| was declared with a [=constructor operation=], then
+        1.  [=Compute the effective overload set=] for constructors with [=identifier=] |id| on
+            [=interface=] |I| and with argument count 0, and let |S| be the result.
+        1.  Set |length| to the length of the
+            shortest argument list of the entries in |S|.
+    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, |length|, |id|, « \[[Unforgeables]] »,
         |realm|, |constructorProto|).
     1.  Let |unforgeables| be [$OrdinaryObjectCreate$](<emu-val>null</emu-val>).
     1.  [=Define the unforgeable regular operations=] of |I| on |unforgeables|, given |realm|.
@@ -11569,14 +12010,6 @@ default interfaces do not have such steps.
         of an interface with an unforgeable member use the same JavaScript function objects for
         [=attribute getters=], [=attribute setters=] and [=creating an operation
         function|operation functions=].
-    1.  Perform <a abstract-op>SetFunctionName</a>(|F|, |id|).
-    1.  Let |length| be 0.
-    1.  If |I| was declared with a [=constructor operation=], then
-        1.  [=Compute the effective overload set=] for constructors with [=identifier=] |id| on
-            [=interface=] |I| and with argument count 0, and let |S| be the result.
-        1.  Set |length| to the length of the
-            shortest argument list of the entries in |S|.
-    1.  Perform <a abstract-op>SetFunctionLength</a>(|F|, |length|).
     1.  Let |proto| be the result of [=create an interface prototype object|creating an interface
         prototype object=] of [=interface=] |I| in |realm|.
     1.  Perform [=!=] <a abstract-op>DefinePropertyOrThrow</a>(|F|, "<code>prototype</code>",
@@ -11622,12 +12055,10 @@ implement the interface on which the
         1.  Assert: |O| is an object that [=implements=] |I|.
         1.  Assert: |O|.\[[Realm]] is |realm|.
         1.  Return |O|.
-    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, « », |realm|).
-    1.  Perform <a abstract-op>SetFunctionName</a>(|F|, |id|).
     1.  [=Compute the effective overload set=] for legacy factory functions with [=identifier=] |id|
         on [=interface=] |I| and with argument count 0, and let |S| be the result.
     1.  Let |length| be the length of the shortest argument list of the entries in |S|.
-    1.  Perform <a abstract-op>SetFunctionLength</a>(|F|, |length|).
+    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, |length|, |id|, « », |realm|).
     1.  Let |proto| be the [=interface prototype object=] of [=interface=] |I| in |realm|.
     1.  Perform [=!=] <a abstract-op>DefinePropertyOrThrow</a>(|F|, "<code>prototype</code>",
         PropertyDescriptor{\[[Value]]: |proto|, \[[Writable]]: <emu-val>false</emu-val>, \[[Enumerable]]: <emu-val>false</emu-val>, \[[Configurable]]: <emu-val>false</emu-val>}).
@@ -11656,9 +12087,9 @@ with the [{{LegacyNoInterfaceObject}}] [=extended attribute=].
         then set |proto| to the [=interface prototype object=] in |realm|
         of that [=inherited interface=].
     1.  Otherwise, if |interface| is the {{DOMException}} [=interface=],
-        then set |proto| to |realm|.\[[Intrinsics]].[[{{%Error.prototype%}}]].
-    1.  Otherwise, set |proto| to |realm|.\[[Intrinsics]].[[{{%Object.prototype%}}]].
-    1.  Assert: <a abstract-op>Type</a>(|proto|) is Object.
+        then set |proto| to |realm|.\[[Intrinsics]].\[[{{%Error.prototype%}}]].
+    1.  Otherwise, set |proto| to |realm|.\[[Intrinsics]].\[[{{%Object.prototype%}}]].
+    1.  Assert: |proto| [=is an Object=].
     1.  Let |interfaceProtoObj| be null.
     1.  If |realm|'s [=is global prototype chain mutable=] is true, then:
         1.  Set |interfaceProtoObj| to [$OrdinaryObjectCreate$](|proto|).
@@ -11755,7 +12186,7 @@ for that interface on which named properties are exposed.
     1.  Let |proto| be null.
     1.  If |interface| is declared to inherit from another interface,
         then set |proto| to the [=interface prototype object=] in |realm| for the [=inherited interface=].
-    1.  Otherwise, set |proto| to |realm|.\[[Intrinsics]].[[{{%Object.prototype%}}]].
+    1.  Otherwise, set |proto| to |realm|.\[[Intrinsics]].\[[{{%Object.prototype%}}]].
     1.  Let |obj| be [$MakeBasicObject$](« \[[Prototype]], \[[Extensible]] »).
     1.  Set |obj|.\[[GetOwnProperty]] as specified in [[#named-properties-object-getownproperty]].
     1.  Set |obj|.\[[DefineOwnProperty]] as specified in [[#named-properties-object-defineownproperty]].
@@ -11933,7 +12364,7 @@ in which case they are exposed on every object that [=implements=] the interface
             returns <emu-val>undefined</emu-val> if |attr| is [=read only=].
         1.  Let |configurable| be <emu-val>false</emu-val> if |attr| is [=unforgeable=]
             and <emu-val>true</emu-val> otherwise.
-        1.  Let |desc| be the PropertyDescriptor{\[[Get]]: |getter|, \[[Set]]: |setter|,
+        1.  Let |desc| be the PropertyDescriptor{\[[Getter]]: |getter|, \[[Setter]]: |setter|,
             \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: |configurable|}.
         1.  Let |id| be |attr|'s [=identifier=].
         1.  Perform [=!=] <a abstract-op>DefinePropertyOrThrow</a>(|target|, |id|, |desc|).
@@ -11980,10 +12411,8 @@ in which case they are exposed on every object that [=implements=] the interface
         1.  If |attribute|'s type is a [=promise type=], then return
             [=!=] <a abstract-op>Call</a>({{%Promise.reject%}}, {{%Promise%}}, «|E|»).
         1.  Otherwise, end these steps and allow the exception to propagate.
-    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, « », |realm|).
     1.  Let |name| be the string "<code>get </code>" prepended to |attribute|'s [=identifier=].
-    1.  Perform <a abstract-op>SetFunctionName</a>(|F|, |name|).
-    1.  Perform <a abstract-op>SetFunctionLength</a>(|F|, 0).
+    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, 0, |name|, « », |realm|).
     1.  Return |F|.
 
 </div>
@@ -12001,8 +12430,8 @@ in which case they are exposed on every object that [=implements=] the interface
         <emu-val>undefined</emu-val>; there is no [=attribute setter=] function.
     1.  Assert: |attribute|'s type is not a [=promise type=].
     1.  Let |steps| be the following series of steps:
-        1.  If no arguments were passed, then [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
-        1.  Let |V| be the value of the first argument passed.
+        1.  Let |V| be <emu-val>undefined</emu-val>.
+        1.  If any arguments were passed, then set |V| to the value of the first argument passed.
         1.  Let |id| be |attribute|'s [=identifier=].
         1.  Let |idlObject| be null.
         1.  If |attribute| is a [=regular attribute=]:
@@ -12026,7 +12455,7 @@ in which case they are exposed on every object that [=implements=] the interface
                 return <emu-val>undefined</emu-val>.
             1.  If |attribute| is declared with a [{{PutForwards}}] extended attribute, then:
                 1.  Let |Q| be [=?=] <a abstract-op>Get</a>(|jsValue|, |id|).
-                1.  If <a abstract-op>Type</a>(|Q|) is not Object, then [=JavaScript/throw=] a
+                1.  If |Q| [=is not an Object=], then [=JavaScript/throw=] a
                     <l spec=ecmascript>{{TypeError}}</l>.
                 1.  Let |forwardId| be the identifier argument of the [{{PutForwards}}] extended
                     attribute.
@@ -12066,10 +12495,8 @@ in which case they are exposed on every object that [=implements=] the interface
         1.  Perform the [=setter steps=] of |attribute|,
             with |idlObject| as [=this=] and |idlValue| as [=the given value=].
         1.  Return <emu-val>undefined</emu-val>
-    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, « », |realm|).
-    1.  Let |name| be the string "<code>set </code>" prepended to |id|.
-    1.  Perform <a abstract-op>SetFunctionName</a>(|F|, |name|).
-    1.  Perform <a abstract-op>SetFunctionLength</a>(|F|, 1).
+    1.  Let |name| be the string "<code>set </code>" prepended to |attribute|'s [=identifier=].
+    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, 1, |name|, « », |realm|).
     1. Return |F|.
 </div>
 
@@ -12151,8 +12578,7 @@ in which case they are exposed on every object that [=implements=] the interface
                     <emu-val>null</emu-val> or <emu-val>undefined</emu-val>, or |realm|'s
                     [=realm/global object=] otherwise.
                     (This will subsequently cause a {{TypeError}} in a few steps, if
-                    the global object does not implement |target| and [{{LegacyLenientThis}}] is not
-                    specified.)
+                    the global object does not implement |target|.)
                     <!-- https://www.w3.org/Bugs/Public/show_bug.cgi?id=18547#c9 -->
                 1.  If |jsValue| [=is a platform object=], then [=perform a security check=],
                     passing |jsValue|, |id|, and "method".
@@ -12184,13 +12610,11 @@ in which case they are exposed on every object that [=implements=] the interface
             that is a [=promise type=], then return
             [=!=] <a abstract-op>Call</a>({{%Promise.reject%}}, {{%Promise%}}, «|E|»).
         1.  Otherwise, end these steps and allow the exception to propagate.
-    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, « », |realm|).
-    1.  Perform <a abstract-op>SetFunctionName</a>(|F|, |id|).
     1.  [=Compute the effective overload set=]  for [=regular operations=] (if |op| is a regular
         operation) or for [=static operations=] (if |op| is a static operation) with [=identifier=]
         |id| on |target| and with argument count 0, and let |S| be the result.
     1.  Let |length| be the length of the shortest argument list in the entries in |S|.
-    1.  Perform <a abstract-op>SetFunctionLength</a>(|F|, |length|).
+    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, |length|, |id|, « », |realm|).
     1.  Return |F|.
 </div>
 
@@ -12205,9 +12629,10 @@ the table, and the operation must have the return type given in the third column
 
 <table id="table-default-method-steps" class="data">
 <thead>
-    <th>[=Identifier=]
-    <th>[=Default method steps=]
-    <th>[=Return type=]</th>
+    <tr>
+        <th>[=Identifier=]
+        <th>[=Default method steps=]
+        <th>[=Return type=]</th>
 <tbody>
     <tr>
         <td>"<code>toJSON</code>"
@@ -12257,10 +12682,11 @@ A [=regular operation=] that does not [=have default method steps=] must not be 
     1.  If a <code>toJSON</code> operation with a [{{Default}}] [=extended attribute=] is declared
         on |I|, then [=list/for each=] [=exposed=] [=regular attribute=] |attr| that is an
         [=interface member=] of |I|, in order:
+        1.  If |attr|'s type is not a [=JSON type=], then [=iteration/continue=].
         1.  Let |id| be the [=identifier=] of |attr|.
         1.  Let |value| be the result of running the [=getter steps=] of |attr| with |object| as
             [=this=].
-        1.  If |value| is a [=JSON type=], then [=map/set=] |map|[|id|] to |value|.
+        1.  [=map/Set=] |map|[|id|] to |value|.
 
 </div>
 
@@ -12366,7 +12792,8 @@ then there must exist a property with the following characteristics:
     and <emu-val>true</emu-val> otherwise.
 *   <div algorithm="to invoke the toString method of interfaces">
 
-        The value of the property is a [=built-in function object=], which behaves as follows:
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|toStringSteps|, 0, "<code>toString</code>", « »),
+        where |toStringSteps| is the following algorithm:
 
         1.  Let |thisValue| be the <emu-val>this</emu-val> value.
         1.  Let |O| be [=?=] <a abstract-op>ToObject</a>(|thisValue|).
@@ -12391,10 +12818,6 @@ then there must exist a property with the following characteristics:
             </dl>
         1.  Return the result of [=converted to a JavaScript value|converting=] |V| to a String value.
     </div>
-*   The value of the [=function object=]'s <code class="idl">length</code>
-    property is the Number value <emu-val>0</emu-val>.
-*   The value of the [=function object=]'s <code class="idl">name</code>
-    property is the String value "<code>toString</code>".
 
 
 <h4 id="js-iterable" oldids="es-iterable">Iterable declarations</h4>
@@ -12427,9 +12850,7 @@ then there must exist a property with the following characteristics:
                     |jsValue| as its [=default iterator object/target=], "<code>key+value</code>"
                     as its [=default iterator object/kind=], and [=default iterator object/index=]
                     set to 0.
-            1.  Let |F| be [$CreateBuiltinFunction$](|steps|, « », |realm|).
-            1.  Perform [$SetFunctionName$](|F|, "<code>entries</code>").
-            1.  Perform [$SetFunctionLength$](|F|, 0).
+            1.  Let |F| be [$CreateBuiltinFunction$](|steps|, 0, "<code>entries</code>", « », |realm|).
             1.  Perform [$DefineMethodProperty$](|target|, {{%Symbol.iterator%}}, |F|, false).
             1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|target|, "<code>entries</code>", |F|).
         1.  Define the <code class="idl">keys</code> method:
@@ -12442,9 +12863,7 @@ then there must exist a property with the following characteristics:
                 1.  Return a newly created [=default iterator object=] for |definition|, with
                     |jsValue| as its [=default iterator object/target=], "<code>key</code>" as its
                     [=default iterator object/kind=], and [=default iterator object/index=] set to 0.
-            1.  Let |F| be [$CreateBuiltinFunction$](|steps|, « », |realm|).
-            1.  Perform [$SetFunctionName$](|F|, "<code>keys</code>").
-            1.  Perform [$SetFunctionLength$](|F|, 0).
+            1.  Let |F| be [$CreateBuiltinFunction$](|steps|, 0, "<code>keys</code>", « », |realm|).
             1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|target|, "<code>keys</code>", |F|).
         1.  Define the <code class="idl">values</code> method:
             1.  Let |steps| be the following series of steps:
@@ -12456,9 +12875,7 @@ then there must exist a property with the following characteristics:
                 1.  Return a newly created [=default iterator object=] for |definition|, with
                     |jsValue| as its [=default iterator object/target=], "<code>value</code>" as its
                     [=default iterator object/kind=], and [=default iterator object/index=] set to 0.
-            1.  Let |F| be [$CreateBuiltinFunction$](|steps|, « », |realm|).
-            1.  Perform [$SetFunctionName$](|F|, "<code>values</code>").
-            1.  Perform [$SetFunctionLength$](|F|, 0).
+            1.  Let |F| be [$CreateBuiltinFunction$](|steps|, 0, "<code>values</code>", « », |realm|).
             1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|target|, "<code>values</code>", |F|).
         1.  Define the <code class="idl">forEach</code> method:
             1.  Let |steps| be the following series of steps, given function argument values
@@ -12482,9 +12899,7 @@ then there must exist a property with the following characteristics:
                     1.  Set |pairs| to |idlObject|'s current list of
                         [=value pairs to iterate over=]. (It might have changed.)
                     1.  Set |i| to |i| + 1.
-            1.  Let |F| be [$CreateBuiltinFunction$](|steps|, « », |realm|).
-            1.  Perform [$SetFunctionName$](|F|, "<code>forEach</code>").
-            1.  Perform [$SetFunctionLength$](|F|, 1).
+            1.  Let |F| be [$CreateBuiltinFunction$](|steps|, 1, "<code>forEach</code>", « », |realm|).
             1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|target|, "<code>forEach</code>", |F|).
 </div>
 
@@ -12528,7 +12943,7 @@ prototype for [=default iterator objects=]
 for the interface.
 
 The \[[Prototype]] [=/internal slot=] of an [=iterator prototype object=]
-must be {{%IteratorPrototype%}}.
+must be {{%Iterator.prototype%}}.
 
 <div algorithm>
   The <dfn>iterator result</dfn> for a [=value pair=] |pair| and a kind |kind| is given by the
@@ -12561,7 +12976,8 @@ must be {{%IteratorPrototype%}}.
 
     An [=iterator prototype object=] must have a <code class="idl">next</code> data property with attributes
     { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }
-    and whose value is a [=built-in function object=] that behaves as follows:
+    and whose value is the [=built-in function object=] [$CreateBuiltinFunction$](|nextSteps|, 0, "<code>next</code>", « »),
+    where |nextSteps| is the following algorithm:
 
     1.  Let |interface| be the [=interface=] for which the
         [=iterator prototype object=] exists.
@@ -12595,7 +13011,7 @@ and the string "<code> Iterator</code>".
     To <dfn>define the asynchronous iteration methods</dfn> of [=interface=] |definition| on
     |target|, given [=realm=] |realm|, run the following steps:
 
-    1.  If |definition| does not have an an [=asynchronously iterable declaration=] (of either
+    1.  If |definition| does not have an [=asynchronously iterable declaration=] (of either
         sort), then return.
     1.  Assert: |definition| does not have an [=indexed property getter=] or an
         [=iterable declaration=].
@@ -12619,9 +13035,7 @@ and the string "<code> Iterator</code>".
             1.  Run the [=asynchronous iterator initialization steps=] for |definition| with
                 |idlObject|, |iterator|, and |idlArgs|, if any such steps exist.
             1.  Return |iterator|.
-        1.  Let |F| be [$CreateBuiltinFunction$](|steps|, « », |realm|).
-        1.  Perform [$SetFunctionName$](|F|, "<code>entries</code>").
-        1.  Perform [$SetFunctionLength$](|F|, 0).
+        1.  Let |F| be [$CreateBuiltinFunction$](|steps|, 0, "<code>entries</code>", « », |realm|).
         1.  Perform [$DefineMethodProperty$](|target|, {{%Symbol.asyncIterator%}}, |F|, false).
         1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|target|, "<code>entries</code>", |F|).
     1.  If |definition| has a [=pair asynchronously iterable declaration=], then define the
@@ -12644,9 +13058,7 @@ and the string "<code> Iterator</code>".
             1.  Run the [=asynchronous iterator initialization steps=] for |definition| with
                 |idlObject|, |iterator|, and |idlArgs|, if any such steps exist.
             1.  Return |iterator|.
-        1.  Let |F| be [$CreateBuiltinFunction$](|steps|, « », |realm|).
-        1.  Perform [$SetFunctionName$](|F|, "<code>keys</code>").
-        1.  Perform [$SetFunctionLength$](|F|, 0).
+        1.  Let |F| be [$CreateBuiltinFunction$](|steps|, 0, "<code>keys</code>, « », |realm|).
         1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|target|, "<code>keys</code>", |F|).
     1.  Define the <code class="idl">values</code>, and possibly {{%Symbol.asyncIterator%}}, methods:
         1.  Let |steps| be the following series of steps, given function argument values |args|:
@@ -12667,9 +13079,7 @@ and the string "<code> Iterator</code>".
             1.  Run the [=asynchronous iterator initialization steps=] for |definition| with
                 |idlObject|, |iterator|, and |idlArgs|, if any such steps exist.
             1.  Return |iterator|.
-        1.  Let |F| be [$CreateBuiltinFunction$](|steps|, « », |realm|).
-        1.  Perform [$SetFunctionName$](|F|, "<code>values</code>").
-        1.  Perform [$SetFunctionLength$](|F|, 0).
+        1.  Let |F| be [$CreateBuiltinFunction$](|steps|, 0, "<code>values</code>", « », |realm|).
         1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|target|, "<code>values</code>", |F|).
         1.  If |definition| has a [=value asynchronously iterable declaration=], then perform [=!=]
             [$DefineMethodProperty$](|target|, {{%Symbol.asyncIterator%}}, |F|, false).
@@ -12740,7 +13150,8 @@ The \[[Prototype]] [=/internal slot=] of an [=asynchronous iterator prototype ob
     An [=asynchronous iterator prototype object=] must have a <code class="idl">next</code> data
     property with attributes { \[[Writable]]: <emu-val>true</emu-val>,
     \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }
-    and whose value is a [=built-in function object=] that behaves as follows:
+    and whose value is the [=built-in function object=] [$CreateBuiltinFunction$](|nextSteps|, 0, "<code>next</code>", « »),
+    where |nextSteps| is the following algorithm:
 
     1.  Let |interface| be the [=interface=] for which the
         [=asynchronous iterator prototype object=] exists.
@@ -12795,13 +13206,13 @@ The \[[Prototype]] [=/internal slot=] of an [=asynchronous iterator prototype ob
                 1.  Assert: |next| is a value of the type that appears in the declaration.
                 1.  Let |value| be |next|, [=converted to a JavaScript value=].
                 1.  Return [$CreateIteratorResultObject$](|value|, <emu-val>false</emu-val>).
-        1.  Let |onFulfilled| be [$CreateBuiltinFunction$](|fulfillSteps|, « »).
+        1.  Let |onFulfilled| be [$CreateBuiltinFunction$](|fulfillSteps|, 1, "", « »).
         1.  Let |rejectSteps| be the following steps, given |reason|:
             1.  Set |object|'s [=default asynchronous iterator object/ongoing promise=] to
                 null.
             1.  Set |object|'s [=default asynchronous iterator object/is finished=] to true.
             1.  [=JavaScript/Throw=] |reason|.
-        1.  Let |onRejected| be [$CreateBuiltinFunction$](|rejectSteps|, « »).
+        1.  Let |onRejected| be [$CreateBuiltinFunction$](|rejectSteps|, 1, "", « »).
         1.  Perform [$PerformPromiseThen$](|nextPromise|, |onFulfilled|, |onRejected|,
             |nextPromiseCapability|).
         1.  Return |nextPromiseCapability|.\[[Promise]].
@@ -12810,7 +13221,7 @@ The \[[Prototype]] [=/internal slot=] of an [=asynchronous iterator prototype ob
 
     1.  If |ongoingPromise| is not null, then:
         1.  Let |afterOngoingPromiseCapability| be [=!=] [$NewPromiseCapability$]({{%Promise%}}).
-        1.  Let |onSettled| be [$CreateBuiltinFunction$](|nextSteps|, « »).
+        1.  Let |onSettled| be [$CreateBuiltinFunction$](|nextSteps|, 0, "", « »).
         1.  Perform [$PerformPromiseThen$](|ongoingPromise|, |onSettled|, |onSettled|,
             |afterOngoingPromiseCapability|).
         1.  Set |object|'s [=default asynchronous iterator object/ongoing promise=] to
@@ -12829,8 +13240,8 @@ The \[[Prototype]] [=/internal slot=] of an [=asynchronous iterator prototype ob
     [=asynchronous iterator prototype object=] must have a <code class="idl">return</code> data
     property with attributes { \[[Writable]]: <emu-val>true</emu-val>,
     \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }
-    and whose value is a [=built-in function object=], taking one argument |value|, that behaves as
-    follows:
+    and whose value is the [=built-in function object=] [$CreateBuiltinFunction$](|returnSteps|, 1, "<code>return</code>", « »),
+    where |returnSteps| is the following algorithm taking one argument |value|:
 
     1.  Let |interface| be the [=interface=] for which the
         [=asynchronous iterator prototype object=] exists.
@@ -12874,7 +13285,7 @@ The \[[Prototype]] [=/internal slot=] of an [=asynchronous iterator prototype ob
 
     1.  If |ongoingPromise| is not null, then:
         1.  Let |afterOngoingPromiseCapability| be [=!=] [$NewPromiseCapability$]({{%Promise%}}).
-        1.  Let |onSettled| be [$CreateBuiltinFunction$](|returnSteps|, « »).
+        1.  Let |onSettled| be [$CreateBuiltinFunction$](|returnSteps|, 0, "", « »).
         1.  Perform [$PerformPromiseThen$](|ongoingPromise|, |onSettled|, |onSettled|,
             |afterOngoingPromiseCapability|).
         1.  Set |object|'s [=default asynchronous iterator object/ongoing promise=] to
@@ -12887,7 +13298,7 @@ The \[[Prototype]] [=/internal slot=] of an [=asynchronous iterator prototype ob
     1.  Let |fulfillSteps| be the following steps:
         1.  Return [$CreateIteratorResultObject$](|value|, <emu-val>true</emu-val>).
 
-    1.  Let |onFulfilled| be [$CreateBuiltinFunction$](|fulfillSteps|, « »).
+    1.  Let |onFulfilled| be [$CreateBuiltinFunction$](|fulfillSteps|, 1, "", « »).
 
     1.  Perform [$PerformPromiseThen$](|object|'s [=default asynchronous iterator object/ongoing
         promise=], |onFulfilled|, <emu-val>undefined</emu-val>, |returnPromiseCapability|).
@@ -12915,23 +13326,19 @@ There must exist a <code class="idl">size</code> property on
 with the following characteristics:
 
 *   The property has attributes
-    { \[[Get]]: |G|, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> },
+    { \[[Getter]]: |G|, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> },
     where |G| is the interface's <dfn id="dfn-map-size-getter" export>map size getter</dfn>,
     defined below.
 *   <div algorithm="to invoke the size method of Maps">
 
-        The [=map size getter=] is a [=built-in function object=]
-        whose behavior when invoked is as follows:
+        The [=map size getter=] is the [=built-in function object=] [$CreateBuiltinFunction$](|sizeSteps|, 0, "<code>get size</code>", « »),
+        where |sizeSteps| is the following algorithm:
 
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>size</code>" and type "<code>getter</code>".
         1.  Let |map| be the [=map entries=] of the IDL value
             that represents a reference to |O|.
         1.  Return |map|'s [=map/size=], [=converted to a JavaScript value=].
     </div>
-
-    The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>0</emu-val>.
-
-    The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>get size</code>".
 
 
 <h5 id="js-map-iterator" oldids="es-map-iterator,es-iterator, es-iterators">%Symbol.iterator%</h5>
@@ -12971,19 +13378,16 @@ There must exist an <code class="idl">entries</code> data property on
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    whose behavior when invoked is as follows:
+*   <div algorithm="to invoke the entries method of Maps">
 
-    <div algorithm="to invoke the entries method of Maps">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|entriesSteps|, 0, "<code>entries</code>", « »),
+        where |entriesSteps| is the following algorithm:
+
         1. Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>entries</code>" and type "<code>method</code>".
         1.  Let |map| be the [=map entries=] of the IDL value
             that represents a reference to |O|.
         1. Return the result of [=creating a map iterator=] from |map| with kind "<code>key+value</code>".
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>0</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>entries</code>".
 
 <h5 id="js-map-keys" oldids="es-map-keys,es-map-keys-values">keys</h5>
 
@@ -12992,19 +13396,16 @@ There must exist a <code class="idl">keys</code> data property on
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    whose behavior when invoked is as follows:
+*   <div algorithm="to invoke the keys method of Maps">
 
-    <div algorithm="to invoke the keys method of Maps">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|keysSteps|, 0, "<code>keys</code>", « »),
+        where |keysSteps| is the following algorithm:
+
         1. Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>keys</code>" and type "<code>method</code>".
         1.  Let |map| be the [=map entries=] of the IDL value
             that represents a reference to |O|.
         1. Return the result of [=creating a map iterator=] from |map| with kind "<code>key</code>".
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>0</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>keys</code>".
 
 
 <h5 id="js-map-values" oldids="es-map-values">values</h5>
@@ -13014,19 +13415,16 @@ There must exist a <code class="idl">values</code> data property on
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    whose behavior when invoked is as follows:
+*   <div algorithm="to invoke the values method of Maps">
 
-    <div algorithm="to invoke the values method of Maps">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|valuesSteps|, 0, "<code>values</code>", « »),
+        where |valuesSteps| is the following algorithm:
+
         1. Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>values</code>" and type "<code>method</code>".
         1.  Let |map| be the [=map entries=] of the IDL value
             that represents a reference to |O|.
         1. Return the result of [=creating a map iterator=] from |map| with kind "<code>value</code>".
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>0</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>values</code>".
 
 
 <h5 id="js-map-forEach" oldids="es-map-forEach,es-forEach">forEach</h5>
@@ -13036,25 +13434,20 @@ There must exist a <code class="idl">forEach</code> data property on
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    whose behavior when invoked is as follows:
+*   <div algorithm="to invoke the forEach method of Maps">
 
-    <div algorithm="to invoke the forEach method of Maps">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|forEachSteps|, 1, "<code>forEach</code>", « »),
+        where |forEachSteps| is the following algorithm taking arguments |callbackFn| and |thisArg|:
+
         1. Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>forEach</code>" and type "<code>method</code>".
         1.  Let |map| be the [=map entries=] of the IDL value
             that represents a reference to |O|.
-        1.  Let |callbackFn| be the first argument passed to the function, or <emu-val>undefined</emu-val> if not supplied.
         1.  If [$IsCallable$](|callbackFn|) is <emu-val>false</emu-val>, [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
-        1.  Let |thisArg| be the second argument passed to the function, or <emu-val>undefined</emu-val> if not supplied.
         1. [=map/For each=] |key| → |value| of |map|:
             1. Let |jsKey| and |jsValue| be |key| and |value| [=converted to a JavaScript value=].
             1. Perform [=?=] [$Call$](|callbackFn|, |thisArg|, « |jsValue|, |jsKey|, |O| »).
         1.  Return <emu-val>undefined</emu-val>.
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>1</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>forEach</code>".
 
 
 <h5 id="js-map-get" oldids="es-map-get,es-map-get-has">get</h5>
@@ -13064,24 +13457,20 @@ There must exist a <code class="idl">get</code> data property on
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    that behaves as follows when invoked:
+*   <div algorithm="to invoke the get method of Maps">
 
-    <div algorithm="to invoke the get method of Maps">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|getSteps|, 1, "<code>get</code>", « »),
+        where |getSteps| is the following algorithm taking one argument |keyArg|:
+
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>get</code>" and type "<code>method</code>".
         1.  Let |map| be the [=map entries=] of the IDL value
             that represents a reference to |O|.
         1.  Let |keyType| be the key type specified in the [=maplike declaration=].
-        1.  Let |keyArg| be the first argument passed to this function, or <emu-val>undefined</emu-val> if not supplied.
         1.  Let |key| be |keyArg| [=converted to an IDL value=] of type |keyType|.
         1.  If |key| is -0, set |key| to +0.
         1.  If |map|[|key|] [=map/exists=], then return |map|[|key|],
             [=converted to a JavaScript value=].
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>1</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>get</code>".
 
 
 <h5 id="js-map-has" oldids="es-map-has">has</h5>
@@ -13091,24 +13480,20 @@ There must exist a <code class="idl">has</code> data property on
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    that behaves as follows when invoked:
+*   <div algorithm="to invoke the has method of Maps">
 
-    <div algorithm="to invoke the has method of Maps">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|hasSteps|, 1, "<code>has</code>", « »),
+        where |hasSteps| is the following algorithm taking one argument |keyArg|:
+
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>has</code>" and type "<code>method</code>".
         1.  Let |map| be the [=map entries=] of the IDL value
             that represents a reference to |O|.
         1.  Let |keyType| be the key type specified in the [=maplike declaration=].
-        1.  Let |keyArg| be the first argument passed to this function, or <emu-val>undefined</emu-val> if not supplied.
         1.  Let |key| be |keyArg| [=converted to an IDL value=] of type |keyType|.
         1.  If |key| is -0, set |key| to +0.
         1.  If |map|[|key|] [=map/exists=], then return <emu-val>true</emu-val>;
             otherwise return <emu-val>false</emu-val>.
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>1</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>has</code>".
 
 
 <h5 id="js-map-set" oldids="es-map-set">set</h5>
@@ -13120,26 +13505,21 @@ on |A|'s [=interface prototype object=]
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    that behaves as follows when invoked:
+*   <div algorithm="to invoke the set method of Maps">
 
-    <div algorithm="to invoke the set method of Maps">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|setSteps|, 2, "<code>set</code>", « »),
+        where |setSteps| is the following algorithm taking arguments |keyArg| and |valueArg|:
+
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>set</code>" and type "<code>method</code>".
         1.  Let |map| be the [=map entries=] of the IDL value
             that represents a reference to |O|.
         1.  Let |keyType| be the key type specified in the [=maplike declaration=], and |valueType| be the value type.
-        1.  Let |keyArg| be the first argument passed to this function, or <emu-val>undefined</emu-val> if not supplied.
         1.  Let |key| be |keyArg| [=converted to an IDL value=] of type |keyType|.
         1.  If |key| is -0, set |key| to +0.
-        1.  Let |valueArg| be the second argument passed to this function, or <emu-val>undefined</emu-val> if not supplied.
         1.  Let |value| be |valueArg| [=converted to an IDL value=] of type |valueType|.
         1.  [=map/Set=] |map|[|key|] to |value|.
         1.  Return |O|.
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>2</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>set</code>".
 
 If the interface does declare a <code class=idl>set</code> method,
 it should similarly map a -0 key to +0,
@@ -13155,15 +13535,15 @@ on |A|'s [=interface prototype object=]
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    that behaves as follows when invoked:
+*   <div algorithm="to invoke the delete method of Maps">
 
-    <div algorithm="to invoke the delete method of Maps">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|deleteSteps|, 1, "<code>delete</code>", « »),
+        where |deleteSteps| is the following algorithm taking one argument |keyArg|:
+
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>delete</code>" and type "<code>method</code>".
         1.  Let |map| be the [=map entries=] of the IDL value
             that represents a reference to |O|.
         1.  Let |keyType| be the key type specified in the [=maplike declaration=].
-        1.  Let |keyArg| be the first argument passed to this function, or <emu-val>undefined</emu-val> if not supplied.
         1.  Let |key| be |keyArg| [=converted to an IDL value=] of type |keyType|.
         1.  If |key| is -0, set |key| to +0.
         1.  Let |retVal| be <emu-val>true</emu-val> if |map|[|key|] exists,
@@ -13171,10 +13551,6 @@ with the following characteristics:
         1.  [=map/Remove=] |map|[|key|].
         1.  Return |retVal|.
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>1</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>delete</code>".
 
 If the interface does declare a <code class=idl>delete</code> method,
 it should similarly map a -0 key to +0,
@@ -13190,10 +13566,11 @@ on |A|'s [=interface prototype object=]
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    that behaves as follows when invoked:
+*   <div algorithm="to invoke the clear method of Maps">
 
-    <div algorithm="to invoke the clear method of Maps">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|clearSteps|, 0, "<code>clear</code>", « »),
+        where |clearSteps| is the following algorithm:
+
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>clear</code>" and type "<code>method</code>".
         1.  Let |map| be the [=map entries=] of the IDL value
             that represents a reference to |O|.
@@ -13203,10 +13580,6 @@ with the following characteristics:
             iterators, currently suspended, iterating over it.
         1.  Return <emu-val>undefined</emu-val>.
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>0</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>clear</code>".
 
 If the interface does declare a <code class=idl>clear</code> method,
 it must preserve the [=map entries=] object (rather than generating a new one)
@@ -13225,23 +13598,19 @@ A <code class="idl">size</code> property must exist on
 |A|'s [=interface prototype object=]
 with the following characteristics:
 
-*   The property has attributes { \[[Get]]: |G|, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> },
+*   The property has attributes { \[[Getter]]: |G|, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> },
     where |G| is the interface's <dfn id="dfn-set-size-getter" export>set size getter</dfn>,
     defined below.
 *   <div algorithm="to invoke the size method of Sets">
 
-        The [=set size getter=] is a [=built-in function object=]
-        whose behavior when invoked is as follows:
+        The [=set size getter=] is the [=built-in function object=] [$CreateBuiltinFunction$](|sizeSteps|, 0, "<code>get size</code>", « »),
+        where |sizeSteps| is the following algorithm:
 
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>size</code>" and type "<code>getter</code>".
         1.  Let |set| be the [=set entries=] of the IDL value
             that represents a reference to |O|.
         1.  Return |set|'s [=set/size=], [=converted to a JavaScript value=].
     </div>
-
-    The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>0</emu-val>.
-
-    The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>get size</code>".
 
 
 <h5 id="js-set-iterator" oldids="es-set-iterator">%Symbol.iterator%</h5>
@@ -13280,21 +13649,16 @@ There must exist an <code class="idl">entries</code> data property on
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    whose behavior when invoked is as follows:
+*   <div algorithm="to invoke the entries method of Sets">
 
-    <div algorithm="to invoke the entries method of Sets">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|entriesSteps|, 0, "<code>entries</code>", « »),
+        where |entriesSteps| is the following algorithm:
+
         1. Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>entries</code>" and type "<code>method</code>".
         1.  Let |set| be the [=set entries=] of the IDL value
             that represents a reference to |O|.
         1. Return the result of [=creating a set iterator=] from |set| with kind "<code>key+value</code>".
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is
-the Number value <emu-val>0</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is
-the String value "<code>entries</code>".
 
 
 <h5 id="js-set-keys" oldids="es-set-keys">keys</h5>
@@ -13313,21 +13677,16 @@ There must exist a <code class="idl">values</code> data property on
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    whose behavior when invoked is as follows:
+*   <div algorithm="to invoke the values method of Sets">
 
-    <div algorithm="to invoke the values method of Sets">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|valuesSteps|, 0, "<code>values</code>", « »),
+        where |valuesSteps| is the following algorithm:
+
         1. Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>values</code>" and type "<code>method</code>".
         1.  Let |set| be the [=set entries=] of the IDL value
             that represents a reference to |O|.
         1. Return the result of [=creating a set iterator=] from |set| with kind "<code>value</code>".
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is
-the Number value <emu-val>0</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is
-the String value "<code>values</code>".
 
 
 <h5 id="js-set-forEach" oldids="es-set-forEach">forEach</h5>
@@ -13337,25 +13696,20 @@ There must exist a <code class="idl">forEach</code> data property on
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    whose behavior when invoked is as follows:
+*   <div algorithm="to invoke the forEach method of Sets">
 
-    <div algorithm="to invoke the forEach method of Sets">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|forEachSteps|, 1, "<code>forEach</code>", « »),
+        where |forEachSteps| is the following algorithm taking arguments |callbackFn| and |thisArg|:
+
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>forEach</code>" and type "<code>method</code>".
         1.  Let |set| be the [=set entries=] of the IDL value
             that represents a reference to |O|.
-        1.  Let |callbackFn| be the first argument passed to the function, or <emu-val>undefined</emu-val> if not supplied.
         1.  If [$IsCallable$](|callbackFn|) is <emu-val>false</emu-val>, [=JavaScript/throw=] a <l spec=ecmascript>{{TypeError}}</l>.
-        1.  Let |thisArg| be the second argument passed to the function, or <emu-val>undefined</emu-val> if not supplied.
         1. [=map/For each=] |value| of |set|:
             1. Let |jsValue| be |value| [=converted to a JavaScript value=].
             1. Perform [=?=] [$Call$](|callbackFn|, |thisArg|, « |jsValue|, |jsValue|, |O|»).
         1.  Return <emu-val>undefined</emu-val>.
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>1</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>forEach</code>".
 
 
 <h5 id="js-set-has" oldids="es-set-has">has</h5>
@@ -13365,24 +13719,20 @@ There must exist a <code class="idl">has</code> data property on
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    that behaves as follows when invoked:
+*   <div algorithm="to invoke the has method of Sets">
 
-    <div algorithm="to invoke the has method of Sets">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|hasSteps|, 1, "<code>has</code>", « »),
+        where |hasSteps| is the following algorithm taking one argument |valueArg|:
+
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>has</code>" and type "<code>method</code>".
         1.  Let |set| be the [=set entries=] of the IDL value
             that represents a reference to |O|.
         1.  Let |valueType| be the value type specified in the [=setlike declaration=].
-        1.  Let |valueArg| be the first argument passed to this function, or <emu-val>undefined</emu-val> if not supplied.
         1.  Let |value| be |valueArg| [=converted to an IDL value=] of type |valueType|.
         1.  If |value| is -0, set |value| to +0.
         1.  If |set| [=set/contains=] |value|, then return <emu-val>true</emu-val>,
             otherwise return <emu-val>false</emu-val>.
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is a Number value <emu-val>1</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>has</code>".
 
 
 <h5 id="js-set-add" oldids="es-set-add,es-add-delete">add</h5>
@@ -13394,24 +13744,20 @@ on |A|'s [=interface prototype object=]
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    that behaves as follows when invoked:
+*   <div algorithm="to invoke the add method of Sets">
 
-    <div algorithm="to invoke the add method of Sets">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|addSteps|, 1, "<code>add</code>", « »),
+        where |addSteps| is the following algorithm taking one argument |valueArg|:
+
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>add</code>" and type "<code>method</code>".
         1.  Let |set| be the [=set entries=] of the IDL value
             that represents a reference to |O|.
         1.  Let |valueType| be the value type specified in the [=setlike declaration=].
-        1.  Let |valueArg| be the first argument passed to this function, or <emu-val>undefined</emu-val> if not supplied.
         1.  Let |value| be |valueArg| [=converted to an IDL value=] of type |valueType|.
         1.  If |value| is -0, set |value| to +0.
         1.  [=set/Append=] |value| to |set|.
         1.  Return |O|.
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>1</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>add</code>".
 
 If the interface does declare an <code class=idl>add</code> method,
 it should similarly map a -0 value to +0,
@@ -13427,24 +13773,20 @@ on |A|'s [=interface prototype object=]
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    that behaves as follows when invoked:
+*   <div algorithm="to invoke the delete method of Sets">
 
-    <div algorithm="to invoke the delete method of Sets">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|deleteSteps|, 1, "<code>delete</code>", « »),
+        where |deleteSteps| is the following algorithm taking one argument |valueArg|:
+
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>delete</code>" and type "<code>method</code>".
         1.  Let |set| be |O|'s [=set entries=].
         1.  Let |valueType| be the value type specified in the [=setlike declaration=].
-        1.  Let |valueArg| be the first argument passed to this function, or <emu-val>undefined</emu-val> if not supplied.
         1.  Let |value| be |valueArg| [=converted to an IDL value=] of type |valueType|.
         1.  If |value| is -0, set |value| to +0.
         1.  Let |retVal| be <emu-val>true</emu-val> if |set| [=set/contains=] |value|, or else <emu-val>false</emu-val>.
         1.  [=list/Remove=] |value| from |set|.
         1.  Return |retVal|.
     </div>
-
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>1</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>delete</code>".
 
 If the interface does declare a <code class=idl>delete</code> method,
 it should similarly map a -0 value to +0,
@@ -13460,10 +13802,11 @@ on |A|'s [=interface prototype object=]
 with the following characteristics:
 
 *   The property has attributes { \[[Writable]]: <emu-val>true</emu-val>, \[[Enumerable]]: <emu-val>true</emu-val>, \[[Configurable]]: <emu-val>true</emu-val> }.
-*   The value of the property is a [=built-in function object=]
-    that behaves as follows when invoked:
+*   <div algorithm="to invoke the clear method of Sets">
 
-    <div algorithm="to invoke the clear method of Sets">
+        The value of the property is the [=built-in function object=] [$CreateBuiltinFunction$](|clearSteps|, 0, "<code>clear</code>", « »),
+        where |clearSteps| is the following algorithm:
+
         1.  Let |O| be the <emu-val>this</emu-val> value, [=implementation-checked=] against <var ignore>A</var> with identifier "<code>clear</code>" and type "<code>method</code>".
         1.  Let |set| be the [=set entries=] of the IDL value
             that represents a reference to |O|.
@@ -13474,10 +13817,6 @@ with the following characteristics:
         1.  Return <emu-val>undefined</emu-val>.
     </div>
 
-The value of the [=function object=]'s <code class="idl">length</code> property is the Number value <emu-val>0</emu-val>.
-
-The value of the [=function object=]'s <code class="idl">name</code> property is the String value "<code>clear</code>".
-
 If the interface does declare a <code class=idl>clear</code> method,
 it must preserve the [=set entries=] object (rather than generating a new one)
 and must return {{undefined}}.
@@ -13486,7 +13825,7 @@ and must return {{undefined}}.
 <h3 id="js-platform-objects" oldids="es-platform-objects">Platform objects implementing interfaces</h3>
 
 <div algorithm>
-    A JavaScript value |value| <dfn>is a platform object</dfn> if [$Type$](|value|) is Object and
+    A JavaScript value |value| <dfn>is a platform object</dfn> if |value| [=is an Object=] and
     if |value| has a \[[PrimaryInterface]] internal slot.
 </div>
 
@@ -13528,12 +13867,13 @@ the realm given as an argument.
     1.  Otherwise:
         1.  Assert: [$IsCallable$](|newTarget|) is true.
         1.  Let |prototype| be [=?=] [$Get$](|newTarget|, "prototype").
-        1.  If [$Type$](|prototype|) is not Object, then:
+        1.  If |prototype| [=is not an Object=], then:
             1.  Let |targetRealm| be [=?=] [$GetFunctionRealm$](|newTarget|).
             1.  Set |prototype| to the [=interface prototype object=] for |interface| in
                 |targetRealm|.
-    1.  Let |instance| be [$MakeBasicObject$](
-        « \[[Prototype]], \[[Extensible]], \[[Realm]], \[[PrimaryInterface]] »).
+    1.  Let |slots| be « \[[Prototype]], \[[Extensible]], \[[Realm]], \[[PrimaryInterface]] ».
+    1.  If |interface| is {{DOMException}}, append \[[ErrorData]] to |slots|.
+    1.  Let |instance| be [$MakeBasicObject$](|slots|).
     1.  Set |instance|.\[[Realm]] to |realm|.
     1.  Set |instance|.\[[PrimaryInterface]] to |interface|.
     1.  Set |instance|.\[[Prototype]] to |prototype|.
@@ -13735,7 +14075,7 @@ Additionally, [=legacy platform objects=] have internal methods as defined in:
             1.  [=Invoke the indexed property setter=] on |O| with |P| and |V|.
             1.  Return <emu-val>true</emu-val>.
         1.  If |O| [=implements=] an interface with a [=named property setter=]
-            and <a abstract-op>Type</a>(|P|) is String, then:
+            and |P| [=is a String=], then:
             1.  [=Invoke the named property setter=] on |O| with |P| and |V|.
             1.  Return <emu-val>true</emu-val>.
     1.  Let |ownDesc| be [=?=] <a abstract-op>LegacyPlatformObjectGetOwnProperty</a>(|O|, |P|, <emu-val>true</emu-val>).
@@ -13762,7 +14102,7 @@ Additionally, [=legacy platform objects=] have internal methods as defined in:
         1.  Return <emu-val>true</emu-val>.
     1.  If |O| [=support named properties|supports named properties=],
         |O| does not implement an [=interface=] with the [{{Global}}] [=extended attribute=],
-        <a abstract-op>Type</a>(|P|) is String,
+        |P| [=is a String=],
         and |P| is not an [=unforgeable property name=]
         of |O|, then:
         1.  Let |creating| be true if |P| is not a [=supported property name=], and false otherwise.
@@ -13869,7 +14209,7 @@ internal method as follows.
     oldids="dfn-array-index-property-name">is an [=array index=]</dfn>, the following algorithm is
     applied:
 
-    1.  If <a abstract-op>Type</a>(|P|) is not String, then return <emu-val>false</emu-val>.
+    1.  If |P| [=is not a String=], then return <emu-val>false</emu-val>.
     1.  Let |index| be <a abstract-op>CanonicalNumericIndexString</a>(|P|).
     1.  If |index| is <emu-val>undefined</emu-val>, then return <emu-val>false</emu-val>.
     1.  If <a abstract-op>IsInteger</a>(|index|) is <emu-val>false</emu-val>,
@@ -14053,21 +14393,21 @@ those of normal <code>Array</code> instances:
     1.  Set |handler|.\[[Type]] to |T|.
     1.  Set |handler|.\[[SetAlgorithm]] to |setAlgorithm|.
     1.  Set |handler|.\[[DeleteAlgorithm]] to |deleteAlgorithm|.
-    1.  Let |defineProperty| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-defineProperty]], « », |realm|).
+    1.  Let |defineProperty| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-defineProperty]], 3, "", « », |realm|).
     1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|handler|, "<code>defineProperty</code>", |defineProperty|).
-    1.  Let |deleteProperty| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-deleteProperty]], « », |realm|).
+    1.  Let |deleteProperty| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-deleteProperty]], 2, "", « », |realm|).
     1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|handler|, "<code>deleteProperty</code>", |deleteProperty|).
-    1.  Let |get| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-get]], « », |realm|).
+    1.  Let |get| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-get]], 3, "", « », |realm|).
     1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|handler|, "<code>get</code>", |get|).
-    1.  Let |getOwnPropertyDescriptor| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-getOwnPropertyDescriptor]], « », |realm|).
+    1.  Let |getOwnPropertyDescriptor| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-getOwnPropertyDescriptor]], 2, "", « », |realm|).
     1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|handler|, "<code>getOwnPropertyDescriptor</code>", |getOwnPropertyDescriptor|).
-    1.  Let |has| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-has]], « », |realm|).
+    1.  Let |has| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-has]], 2, "", « », |realm|).
     1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|handler|, "<code>has</code>", |has|).
-    1.  Let |ownKeys| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-ownKeys]], « », |realm|).
+    1.  Let |ownKeys| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-ownKeys]], 1, "", « », |realm|).
     1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|handler|, "<code>ownKeys</code>", |ownKeys|).
-    1.  Let |preventExtensions| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-preventExtensions]], « », |realm|).
+    1.  Let |preventExtensions| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-preventExtensions]], « », 0, "", |realm|).
     1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|handler|, "<code>preventExtensions</code>", |preventExtensions|).
-    1.  Let |set| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-set]], « », |realm|).
+    1.  Let |set| be [$CreateBuiltinFunction$](the steps from [[#js-observable-array-set]], « », 4, "", |realm|).
     1.  Perform [=!=] [$CreateDataPropertyOrThrow$](|handler|, "<code>set</code>", |set|).
     1.  Return [=!=] [$ProxyCreate$](|innerArray|, |handler|).
 </div>
@@ -14391,9 +14731,7 @@ when applied to a [=legacy callback interface object=].
 
     1.  Let |steps| be the following steps:
         1.  [=JavaScript/Throw=] a <l spec=ecmascript>{{TypeError}}</l>.
-    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, « », |realm|).
-    1.  Perform <a abstract-op>SetFunctionName</a>(|F|, |id|).
-    1.  Perform <a abstract-op>SetFunctionLength</a>(|F|, 0).
+    1.  Let |F| be <a abstract-op>CreateBuiltinFunction</a>(|steps|, 0, |id|, « », |realm|).
     1.  [=Define the constants=] of |interface| on |F| given |realm|.
     1.  Return |F|.
 </div>
@@ -14524,7 +14862,7 @@ The characteristics of a namespace object are described in [[#namespace-object]]
     The namespace object for a given [=namespace=] |namespace| and [=realm=] |realm|
     is <dfn lt="create a namespace object">created</dfn> as follows:
 
-    1.  Let |namespaceObject| be [$OrdinaryObjectCreate$](|realm|.\[[Intrinsics]].[[{{%Object.prototype%}}]]).
+    1.  Let |namespaceObject| be [$OrdinaryObjectCreate$](|realm|.\[[Intrinsics]].\[[{{%Object.prototype%}}]]).
     1.  [=Define the regular attributes=] of |namespace| on |namespaceObject| given |realm|.
     1.  [=Define the regular operations=] of |namespace| on |namespaceObject| given |realm|.
     1.  [=Define the constants=] of |namespace| on |namespaceObject| given |realm|.
@@ -14547,9 +14885,10 @@ The [=class string=] of a [=namespace object=] is the [=namespace=]'s [=identifi
 In the JavaScript binding, the [=interface prototype object=] for {{DOMException}}
 has its \[[Prototype]] [=/internal slot=] set to the intrinsic object {{%Error.prototype%}},
 as defined in the [=create an interface prototype object=] abstract operation.
+It also has \[[ErrorData]] and \[[Stack]] slots, like all built-in exceptions.
 
-Additionally, if an implementation gives native {{Error}} objects special powers or
-nonstandard properties (such as a <code>stack</code> property),
+Additionally, if an implementation gives native {{Error}} objects other special powers or
+nonstandard properties (such as <code>line</code> and <code>column</code> properties),
 it should also expose those on {{DOMException}} objects.
 
 <h4 id="js-exception-objects" oldids="es-exception-objects" dfn>Exception objects</h4>
@@ -14568,7 +14907,7 @@ A {{DOMException}} is represented by a
     To [=exception/create=] a [=simple exception=] of type |T|:
 
     1.  Let |message| be an [=implementation-defined=] message appropriate for the exceptional
-        situation. The calling specification may contain information to to help implementations
+        situation. The calling specification may contain information to help implementations
         construct this message.
 
         Implementations need to be cautious not to leak sensitive or secured information when
@@ -14577,7 +14916,7 @@ A {{DOMException}} is represented by a
 
     1.  Let |args| be « |message| ».
 
-    1.  Let |constructor| be [=current realm=].\[[Intrinsics]].[[%|T|%]].
+    1.  Let |constructor| be [=current realm=].\[[Intrinsics]].\[[%|T|%]].
 
     1. Return [=!=] [$Construct$](|constructor|, |args|).
 </div>
@@ -14592,7 +14931,7 @@ A {{DOMException}} is represented by a
     1.  Set |ex|'s [=DOMException/name=] to |name|.
 
     1.  Set |ex|'s [=DOMException/message=] to an [=implementation-defined=] message appropriate for
-        the exceptional situation. The calling specification may contain information to to help
+        the exceptional situation. The calling specification may contain information to help
         implementations construct this message.
 
         Implementations need to be cautious not to leak sensitive or secured information when
@@ -14612,7 +14951,7 @@ A {{DOMException}} is represented by a
     1.  Set |ex|'s [=DOMException/name=] to |type|.
 
     1.  Set |ex|'s [=DOMException/message=] to an [=implementation-defined=] message appropriate for
-        the exceptional situation. The calling specification may contain information to to help
+        the exceptional situation. The calling specification may contain information to help
         implementations construct this message.
 
         Implementations need to be cautious not to leak sensitive or secured information when
@@ -14642,7 +14981,7 @@ A {{DOMException}} is represented by a
     <pre highlight="webidl">
         [Exposed=Window]
         interface MathUtils {
-          // If x is negative, throws a "<a href="#notsupportederror">NotSupportedError</a>" <a href="dfn-DOMException">DOMException</a>.
+          // If x is negative, throws a "<a href="#notsupportederror">NotSupportedError</a>" <a href="#dfn-DOMException">DOMException</a>.
           double computeSquareRoot(double x);
         };
     </pre>
@@ -14766,7 +15105,7 @@ objects that provide a view on to an {{ArrayBuffer}} or
 
 <h3 id="BufferSource" typedef oldids="common-BufferSource">BufferSource</h3>
 
-<pre class="idl">typedef (ArrayBufferView or ArrayBuffer) BufferSource;</pre>
+<pre class="idl">typedef (ArrayBuffer or ArrayBufferView) BufferSource;</pre>
 
 The {{BufferSource}} typedef is used to represent objects
 that are either themselves an {{ArrayBuffer}} or which
@@ -14857,8 +15196,9 @@ Their [=serialization steps=], given <var>value</var> and <var>serialized</var>,
 <ol>
     <li>Set <var>serialized</var>.\[[Name]] to <var>value</var>'s [=DOMException/name=].</li>
     <li>Set <var>serialized</var>.\[[Message]] to <var>value</var>'s [=DOMException/message=].</li>
+    <li>Set <var>serialized</var>.\[[Stack]] to an implementation-defined string derived from <var>value</var>.\[[Stack]].</li>
     <li>User agents should attach a serialized representation of any interesting accompanying data
-    which are not yet specified, notably the <code>stack</code> property, to
+    which are not yet specified, notably the <code>line</code> and <code>column</code> properties, to
     <var>serialized</var>.</li>
 </ol>
 
@@ -14867,6 +15207,7 @@ Their [=deserialization steps=], given <var>value</var> and <var>serialized</var
 <ol>
     <li>Set <var>value</var>'s [=DOMException/name=] to <var>serialized</var>.\[[Name]].</li>
     <li>Set <var>value</var>'s [=DOMException/message=] to <var>serialized</var>.\[[Message]].</li>
+    <li>Set <var>value</var>.\[[Stack]] to <var>serialized</var>.\[[Stack]].</li>
     <li>If any other data is attached to <var>serialized</var>, then deserialize and attach it to
     <var>value</var>.</li>
 </ol>
@@ -14909,7 +15250,7 @@ Extensions to any other aspect of the IDL language are
 strongly discouraged.
 
 
-<h2 id="legacy-constructs">Legacy constructs</h4>
+<h2 id="legacy-constructs">Legacy constructs</h2>
 
 <i>This section is informative.</i>
 
@@ -15187,14 +15528,14 @@ defined in this specification — see
 for the syntaxes that are used by these extended attributes.
 
 
-<h2 id="conventions" class="no-num">Document conventions</h3>
+<h2 id="conventions" class="no-num">Document conventions</h2>
 
 The following typographic conventions are used in this document:
 
 *   Defining instances of terms: <dfn id="dfn-example-term">example term</dfn>
 *   Links to terms defined in this document or elsewhere: [=example term=]
 *   Grammar terminals: <emu-t>sometoken</emu-t>
-*   Grammar non-terminals: <emu-nt>ExampleGrammarNonTerminal</emu-t>
+*   Grammar non-terminals: <emu-nt>ExampleGrammarNonTerminal</emu-nt>
 *   Grammar symbols: <emu-t class="regex">identifier</emu-t>
 *   IDL types: {{unsigned long}}
 *   JavaScript classes: {{Map}}
